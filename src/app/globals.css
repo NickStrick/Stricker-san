@@ -4,18 +4,17 @@
 
 /* src/app/globals.css  (append to yours) */
 :root {
- --primary: #ff3c00;   /* vivid orange */
-  --accent:  #ffae00;   /* electric blue */
-  --bg:      #fff7ec; 
-   --bg-2:      #ffb96a;  /* soft cream backdrop */
-  --fg:      #330000;   /* deep slate ink */
-  --muted:   #8b0000;
-  /* optional band colors for wavy sections */
-  --band-1:  #ff3c00;
-  --band-2:  #ffae00;
-  --text-1: black;
+ --primary: #ff0f7b;   /* neon green */
+  --accent:  #fc790e;   /* magenta */
+  --bg:      #251a1f; 
+  --bg-2    : #750035;
+  --fg:      #e5e7eb;   /* light gray text */
+  --muted:   #9ca3af;
+  --band-1:  #fc790e;
+  --band-2:  #fc790e;   /* neon violet for contrast */
+  --text-1: white;
   --text-2: white;
-  --text-accent: white;
+  --text-accent: black;
 }
 
 .loading-span{

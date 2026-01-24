@@ -36,7 +36,6 @@ async function getSiteConfig(): Promise<SiteConfig> {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.warn(`[config] ${url} -> ${res.status}`, text?.slice(0, 200));
-      if (!res.ok) throw new Error("failed");
       return null;
     }
     return (await res.json()) as SiteConfig;

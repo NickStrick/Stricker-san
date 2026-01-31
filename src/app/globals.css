@@ -4,17 +4,18 @@
 
 /* src/app/globals.css  (append to yours) */
 :root {
-  --primary: #ff0f7b;   /* neon green */
-  --accent:  #fc790e;   /* magenta */
-  --bg:      #251a1f; 
-  --bg-2    : #750035;
-  --fg:      #e5e7eb;   /* light gray text */
-  --muted:   #9ca3af;
-  --band-1:  #fc790e;
-  --band-2:  #fc790e;   /* neon violet for contrast */
-  --text-1: white;
+ --primary: #ff3c00;   /* vivid orange */
+  --accent:  #ffae00;   /* electric blue */
+  --bg:      #fff7ec; 
+   --bg-2:      #ffb96a;  /* soft cream backdrop */
+  --fg:      #330000;   /* deep slate ink */
+  --muted:   #8b0000;
+  /* optional band colors for wavy sections */
+  --band-1:  #ff3c00;
+  --band-2:  #ffae00;
+  --text-1: black;
   --text-2: white;
-  --text-accent: black;
+  --text-accent: white;
 }
 
 .loading-span{
@@ -517,7 +518,7 @@ body[data-theme="grove"]  {
       background-position: 0% 0%;
       animation: btnunhover 2s ;
       animation-play-state: paused;
-      color:var(--primary);
+      color:white;
   }
   .btn-small {
     @apply inline-block px-4 py-2 text-sm font-semibold rounded-full transition duration-300;
@@ -686,4 +687,13 @@ button:disabled,
 button[disabled]{
   background-color: gray !important;
   cursor: not-allowed !important;
+}
+.admin-image-preview{
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.feature-image{
+  max-height: 300px;
+    object-fit: cover;
 }

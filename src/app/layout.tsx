@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { SiteProvider } from "@/context/SiteContext";
+import { CartProvider } from "@/context/CartContext";
 import type { SiteConfig } from "@/types/site";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
@@ -14,6 +15,7 @@ import AdminBar from "@/components/admin/AdminBar";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+// import { mockSiteConfig } from "@/mocks/siteConfig";
 import { mockSiteConfig } from "@/mocks/markConfig";
 
 export const metadata: Metadata = {
@@ -36,8 +38,7 @@ async function getSiteConfig(): Promise<SiteConfig> {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.warn(`[config] ${url} -> ${res.status}`, text?.slice(0, 200));
-      // return null 
-      return mockSiteConfig;
+      return null;
     }
     return (await res.json()) as SiteConfig;
   }
@@ -70,14 +71,16 @@ export default async function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-app`}>
         <SiteProvider initial={config}>
-          <main className="overflow-hidden">{children}</main>
-          {showThemeSwitcher && <ThemeSwitcher />}
+          <CartProvider>
+            <main className="overflow-hidden"><div id="top"></div>{children}</main>
+            {showThemeSwitcher && <ThemeSwitcher />}
 
           {/* ✅ Admin overlay (toggle with Ctrl/Cmd + Alt + A OR Ctrl/Cmd + Shift + A)
               Also supports ?admin=1 and persists via localStorage */}
-          <AdminGate>
-            <AdminBar />
-          </AdminGate>
+            <AdminGate>
+              <AdminBar />
+            </AdminGate>
+          </CartProvider>
         </SiteProvider>
       </body>
     </html>

@@ -101,6 +101,7 @@ export type HeaderStyle = {
 export type HeaderSection = SectionBase & {
   type: 'header';
   logoText?: string;
+  logoImage?: string;
   links?: { label: string; href: string }[];
   cta?: { label: string; href: string };
   style?: HeaderStyle; // 👈 new
@@ -540,6 +541,36 @@ export type ProductListingsStyle = {
   showBadges?: boolean;
 };
 
+export type CheckoutInputType =
+  | 'text'
+  | 'tel'
+  | 'email'
+  | 'date'
+  | 'time'
+  | 'datetime-local'
+  | 'textarea'
+  | 'select';
+
+export type CheckoutInputOption = { label: string; value: string };
+
+export type CheckoutInput = {
+  id: string;
+  label: string;
+  type: CheckoutInputType;
+  required?: boolean;
+  placeholder?: string;
+  description?: string;
+  options?: CheckoutInputOption[];
+  googleFormEntryId?: string;
+  hidden?: boolean;
+};
+
+export type GoogleFormOptions = {
+  addItemToGForm?: boolean;
+  itemsEntryId?: string;
+  totalEntryId?: string;
+};
+
 export type ProductListingsSection = SectionBase & {
   id: string;
   type: 'productListings';
@@ -549,6 +580,13 @@ export type ProductListingsSection = SectionBase & {
   style?: ProductListingsStyle;
   showAllThreshold?: number;     // default 3 — show "Show all" if > threshold
   buyCtaFallback?: string;       // default "Buy Now"
+  detailsEnabled?: boolean;        // default false
+  cartActive?: boolean;        // default false
+  checkoutInputs?: CheckoutInput[];
+  googleFormUrl?: string;
+  paymentType?: 'converge' | 'externalLink';
+  externalPaymentUrl?: string;
+  googleFormOptions?: GoogleFormOptions;
 };
 
 export type PersonItem = {

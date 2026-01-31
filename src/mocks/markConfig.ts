@@ -246,7 +246,7 @@ export const mockSiteConfig: SiteConfig = {
       type: "about",
       title: "About Mark",
       body:
-        "I'm Mark Stricker - an emerging technology educator and solutions engineer. I taught college classes on emerging technologies, and I've spent 10+ years scoping, selling, demonstrating, and implementing enterprise solutions.\n\nI specialize in cloud and SaaS solutions, security solutions, and ITSM/ITOM. I've worked with Fortune 500 commercial customers, public sector / DoD clients, state and local government, and higher education.\n\nToday, I write and teach practical frameworks for learning new technologies, earning certifications, and passing exams - without burnout.",
+        "I'm Mark Stricker - an emerging technology educator and solutions engineer. I've taught clients and college students on emerging technologies, and I've spent 10+ years scoping, selling, demonstrating, and implementing enterprise solutions.\n\nI specialize in cloud and SaaS solutions, security solutions, and ITSM/ITOM. I've worked with Fortune 500 commercial customers, public sector / DoD clients, state and local government, and higher education.\n\nToday, I write and teach practical frameworks for learning new technologies, earning certifications, and passing exams - without burnout.",
       imageUrl: headshot2.src,
       bullets: [
         "10+ years enterprise solutions experience",

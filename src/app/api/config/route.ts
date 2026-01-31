@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SiteConfigSchema } from '@/lib/siteSchema';
 import { getConfigFromS3, putConfigToS3, type ConfigVariant } from '@/lib/configStore';
 import { guardAdmin } from '@/lib/adminGuardRoute';
-import { mockSiteConfig } from '@/mocks/caroleConfig'; // keep local fallback
+import { mockSiteConfig } from '@/mocks/markConfig'; // keep local fallback
 
 export async function GET(req: NextRequest) {
   // ?variant=draft|published (default published)

@@ -19,6 +19,11 @@ import blog3 from "../../public/mark/blog3.jpg";
 import blog4 from "../../public/mark/blog4.jpg";
 import blog5 from "../../public/mark/blog5.jpg";
 import nature from "../../public/mark/nature.jpg";
+
+import testimonal1 from "../../public/mark/testimonials/1.jpg";
+import testimonal2 from "../../public/mark/testimonials/2.jpg";
+import testimonal3 from "../../public/mark/testimonials/3.jpg";
+import testimonal4 from "../../public/mark/testimonials/4.jpg";
 // -------------------------------------------------------------
 
 const SUBSTACK_BLOG = "https://stricker.substack.com/";
@@ -52,7 +57,7 @@ export const mockSiteConfig: SiteConfig = {
         { label: "Teachings", href: "#teach" },
         { label: "About", href: "#about" },
         { label: "Products", href: "#products" },
-        { label: "Partners", href: "#partners" },
+        { label: "Testimonials", href: "#testimonials" },
         { label: "Philosophy", href: "#about-philosophy" },
       ],
       // Primary CTA = Substack blog
@@ -72,7 +77,7 @@ export const mockSiteConfig: SiteConfig = {
       subtitle:
         "I write and teach practical frameworks for mastering new technologies, passing exams, and building durable learning habits. Staff Solutions Engineer (Splunk) and longtime instructor of emerging technologies.",
       primaryCta: { label: "Read my Substack", href: SUBSTACK_BLOG },
-      secondaryCta: { label: "View Offers", href: "#products" },
+      secondaryCta: { label: "Browse Products", href: "#products" },
       imageUrl: headshot.src,
     },
 
@@ -305,9 +310,9 @@ export const mockSiteConfig: SiteConfig = {
       visible: true,
       id: "products",
       type: "productListings",
-      title: "Handcrafted Guides & Resources",
+      title: "Handcrafted Resources",
       subtitle: "Expert designed Learning Strategies, philosophy, and practical frameworks.",
-      style: { columns: 1, cardVariant: "default", showBadges: true },
+      style: { columns: 2, cardVariant: "default", showBadges: true },
       showAllThreshold: 20,
       buyCtaFallback: "Buy Now",
       cartActive: true,
@@ -321,7 +326,6 @@ export const mockSiteConfig: SiteConfig = {
           subtitle: "A learning philosophy for building momentum, confidence, and repeatable progress.",
           sku: "CMF-R6",
           price: 5500,
-          compareAtPrice: 6500,
           currency: "USD",
           thumbnailUrl: blog1.src,
           images: [
@@ -335,6 +339,36 @@ export const mockSiteConfig: SiteConfig = {
           ],
           badges: ["Bestseller", "New"],
           tags: ["study guide", "learning", "self-improvement"],
+          stock: "in_stock",
+          quantityAvailable: 99,
+          digital: false,
+          weightKg: 1.2,
+          widthCm: 24,
+          heightCm: 36,
+          depthCm: 24,
+          ctaLabel: "Buy Now",
+          maxQuantity: 99,
+        },
+        {
+          id: "PDF-002",
+          name: "BioHacks: Science Backed Longevity & Vitality",
+          subtitle: "Practical biohacks for enhancing longevity, vitality, and overall well-being.",
+          sku: "CMF-R6",
+          price: 3500,
+          compareAtPrice: 4500,
+          currency: "USD",
+          thumbnailUrl: blog4.src,
+          images: [
+            { url: blog4.src, alt: "BioHacks: longevity & Vitality 1" },
+          ],
+          summary: " A concise guide to adopting the 'BioHacks: longevity & Vitality' mindset and strategies.",
+          description:
+            "biohacks that provide a step-by-step approach to enhancing longevity and vitality effectively. It includes practical tips, exercises, and real-world examples to help individuals improve their well-being and achieve their health goals.",
+          features: ["Comprehensive biohacking strategies", "Practical exercises", "Real-world examples"],
+          specs: [
+          ],
+          badges: ["Bestseller", "Discount", "Limited Edition"],
+          tags: ["biohacks", "longevity", "well-being"],
           stock: "in_stock",
           quantityAvailable: 99,
           digital: false,
@@ -398,6 +432,46 @@ export const mockSiteConfig: SiteConfig = {
   muted: false,
   loop: false,
 },
+    {
+      visible: true,
+      id: "testimonials",
+      type: "testimonials",
+      title: "Testimonials",
+      subtitle: "What colleagues and leaders have shared about working with Mark",
+      bottomWaveType: "1-hill",
+      style: { variant: "card", columns: 2, rounded: "xl", background: "band" },
+      items: [
+        {
+          avatarUrl: testimonal1.src,
+          name: "Randal Locke",
+          role: "Technical Sales Leader - Service Desk Manager - ITIL v3 Expert",
+          quote:
+            "Mark does a great job of understanding what the client is looking for, asking detailed questions to drill into realistic capabilities, and then putting a plan together with the client to achieve those goals. He is very good in front of a client and easily gains their trust with his interpersonal capabilities as well as his understanding in the Service Management and Asset Management industries. Mark would be an asset to any organization.",
+        },
+        {
+          avatarUrl: testimonal2.src,
+          name: "Julia Ferguson",
+          role: "Designer, Continual Improver, Community Builder",
+          quote:
+            "Mark is hard-working, intelligent, broad-thinking, trust-worthy, and also a genuinely nice guy. These traits were recognized early-on in the years we worked together at CA Technologies and I recommended him for several promotions that gave him increasing levels of responsibility. He never disappointed. Mark has a rare combination of strong creative, \"soft\" skills and deep technical knowledge that makes him an excellent problem-solver and analyst. He's a quick study and never stops learning and embracing new ideas. If I were building a team and looking for someone to lead it, Mark would be among my top choices.",
+        },
+        {
+          avatarUrl: testimonal3.src,
+          name: "Bill Messick",
+          role: "Former ITSM Senior Consultant (Retired)",
+          quote:
+            "Mark was the architect on a large enterprise-wide project involving several CA applications, any one of which would have been a sizable project by itself. His encyclopedic knowledge of CA products and other IT technologies, as well as his exceptional work ethic and willingness to help other team members with technical challenges, helped to inspire and energize the whole project team.",
+        },
+        {
+          avatarUrl: testimonal4.src,
+          name: "June Wang",
+          role: "Sr. Consultant at CA, a Broadcom Company",
+          quote:
+            "I have worked with Mark for the past year. Mark has been a tremendous asset to our team. He is an important contributor to our USARC project along with other teammates. He consistently delivers high quality work, meets or exceeds deadlines, and assists his co-workers at every opportunity with his broad technical knowledge. When under an especially strict timeline on that project, he worked a lot of overtime to ensure the client was pleased. Mark exemplifies good character and he is a trustworthy, reliable worker who goes extra miles to get job done and has made so many clients very happy.",
+        },
+      ],
+    },
+
 
     // ======================
     // SOCIALS
@@ -488,7 +562,7 @@ At the center of it all is love and family. They keep me grounded, patient, and 
             { label: "Teachings", href: "#teach" },
             { label: "About", href: "#about" },
             { label: "Products", href: "#products" },
-            { label: "Partners", href: "#partners" },
+            { label: "Testimonials", href: "#testimonials" },
             { label: "Philosophy", href: "#about-philosophy" },
           ],
         },

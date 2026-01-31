@@ -444,13 +444,11 @@ export const mockSiteConfig: SiteConfig = {
       type: "about",
       title: "Philosophy, education, and family",
       body:
-        `My work is grounded in philosophy and lifelong learning. I draw inspiration from Alan Watts and Zen Buddhism the quiet clarity, presence, and humility needed to navigate complexity. I also admire Neil deGrasse Tyson’s ability to make advanced ideas accessible, and Tony Robbins’ focus on discipline, energy, and momentum.
+        `I’m rooted in philosophy and lifelong learning, heavily influenced by Zen Buddhism, Alan Watts, and the kind of thinking that reminds you to slow down, breathe, and maybe stop overthinking everything for five minutes. I spend a lot of time in nature for the same reason, it’s honest, humbling, and wildly good at putting things back into perspective. I also admire Tony Robbins’ obsession with discipline, energy, and momentum… which explains a lot about my calendar and my caffeine intake.
 
-Those influences shape how I show up as an educator and practitioner: bold, compassionate, and practical. I aim to take the best of what these leaders embody while forging my own path in cutting-edge technology, cybersecurity, and AI.
+I work in technology, cybersecurity, and AI, and I’m also a lifelong health hacker—constantly experimenting with habits, routines, and data to stay sharp, energized, and human in a world that doesn’t always encourage balance.
 
-At the center of everything is family. My love for my family fuels my commitment to integrity, patience, and service. The work I do teaching, mentoring, and helping others grow with confidence is an extension of that care.
-
-That’s the throughline of my career: philosophy as my compass, education as my craft, and family as the foundation that gives the mission meaning.`,
+At the center of it all is love and family. They keep me grounded, patient, and real. Everything I do, teaching, mentoring, building, and learning, is an extension of that love. That’s the throughline of my work: philosophy as a compass, nature as a reset button, and service as the way forward.`,
       imageUrl: nature.src,
       align: "right",
       backgroundClass: "bg-gradient-2",

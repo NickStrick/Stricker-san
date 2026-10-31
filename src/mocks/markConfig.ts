@@ -42,29 +42,53 @@ export const mockSiteConfig: SiteConfig = {
       "Mark Stricker writes and teaches about emerging technologies, certification strategy, and learning systems. Staff Solutions Engineer at Splunk and longtime instructor.",
     favicon: logoMark.src,
   },
+  showHeader: true,
+  header: {
+    id: "hdr",
+    type: "header",
+    logoText: "Mark Stricker",
+    links: [
+      { label: "Home", href: "#top" },
+      { label: "Blog", href: "#blog" },
+      { label: "Teachings", href: "#teach" },
+      { label: "About", href: "#about" },
+      { label: "Products", href: "#products" },
+      { label: "Testimonials", href: "#testimonials" },
+      { label: "Philosophy", href: "#about-philosophy" },
+    ],
+    // Primary CTA = Substack blog
+    cta: { label: "Read my Blog", href: SUBSTACK_BLOG },
+    style: { sticky: true, blur: true, elevation: "sm", transparent: false },
+  },
+  showFooter: true,
+  footer: {
+    id: "ftr",
+    type: "footer",
+    columns: [
+      {
+        title: "Explore",
+        links: [
+          { label: "Home", href: "#top" },
+          { label: "Blog", href: "#blog" },
+          { label: "Teachings", href: "#teach" },
+          { label: "About", href: "#about" },
+          { label: "Products", href: "#products" },
+          { label: "Testimonials", href: "#testimonials" },
+          { label: "Philosophy", href: "#about-philosophy" },
+        ],
+      },
+      {
+        title: "Connect",
+        links: [
+          { label: "Substack", href: SUBSTACK_BLOG },
+          { label: "LinkedIn", href: LINKEDIN },
+          { label: "Email", href: `mailto:${EMAIL}` },
+        ],
+      },
+    ],
+    legal: "© 2026 Mark Stricker. All rights reserved.",
+  },
   sections: [
-    // ======================
-    // HEADER
-    // ======================
-    {
-      visible: true,
-      id: "hdr",
-      type: "header",
-      logoText: "Mark Stricker",
-      links: [
-        { label: "Home", href: "#top" },
-        { label: "Blog", href: "#blog" },
-        { label: "Teachings", href: "#teach" },
-        { label: "About", href: "#about" },
-        { label: "Products", href: "#products" },
-        { label: "Testimonials", href: "#testimonials" },
-        { label: "Philosophy", href: "#about-philosophy" },
-      ],
-      // Primary CTA = Substack blog
-      cta: { label: "Read my Blog", href: SUBSTACK_BLOG },
-      style: { sticky: true, blur: true, elevation: "sm", transparent: false },
-    },
-
     // ======================
     // HERO (Primary CTA -> Substack)
     // ======================
@@ -482,37 +506,6 @@ At the center of it all is love and family. They keep me grounded, patient, and 
       backgroundClass: "bg-gradient-2-top",
     },
 
-    // ======================
-    // FOOTER
-    // ======================
-    {
-      visible: true,
-      id: "ftr",
-      type: "footer",
-      columns: [
-        {
-          title: "Explore",
-          links: [
-            { label: "Home", href: "#top" },
-            { label: "Blog", href: "#blog" },
-            { label: "Teachings", href: "#teach" },
-            { label: "About", href: "#about" },
-            { label: "Products", href: "#products" },
-            { label: "Testimonials", href: "#testimonials" },
-            { label: "Philosophy", href: "#about-philosophy" },
-          ],
-        },
-        {
-          title: "Connect",
-          links: [
-            { label: "Substack", href: SUBSTACK_BLOG },
-            { label: "LinkedIn", href: LINKEDIN },
-            { label: "Email", href: `mailto:${EMAIL}` },
-          ],
-        },
-      ],
-      legal: "© 2026 Mark Stricker. All rights reserved.",
-    },
   ],
   products: {
     items: [

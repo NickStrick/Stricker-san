@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Next 16 needs Node >= 20.9
+        - nvm install 22 && nvm use 22
+        - npm ci
+    build:
+      commands:
+        # Amplify env vars exist only at build time; copy the server-side ones into
+        # .env.production so API routes and server components can read them at runtime.
+        - env | grep -E '^(APP_AWS_|NEXT_PUBLIC_|S3_|DDB_|RESEND_|SQUARE_|CLOVER_|CONVERGE_|OPENAI_|ADMIN_AI_|CHECKOUT_)' >> .env.production || true
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .next/cache/**/*
+      - node_modules/**/*

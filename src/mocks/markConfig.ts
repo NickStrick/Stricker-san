@@ -315,72 +315,8 @@ export const mockSiteConfig: SiteConfig = {
       style: { columns: 2, cardVariant: "default", showBadges: true },
       showAllThreshold: 20,
       buyCtaFallback: "Buy Now",
-      cartActive: true,
-      paymentType: "externalLink",
       
-      externalPaymentUrl: "https://venmo.com/u/Mark-Stricker-2?txn=pay&note=Purchase&amount=",
-      products: [
-        {
-          id: "PDF-001",
-          name: "Study Guide: Learn Like a Hero",
-          subtitle: "A learning philosophy for building momentum, confidence, and repeatable progress.",
-          sku: "CMF-R6",
-          price: 5500,
-          currency: "USD",
-          thumbnailUrl: blog1.src,
-          images: [
-            { url: blog1.src, alt: "Study Guide: Learn Like a Hero 1" },
-          ],
-          summary: " A concise guide to adopting the 'Learn Like a Hero' mindset and strategies.",
-          description:
-            "This study guide provides a step-by-step approach to mastering new skills and knowledge effectively. It includes practical tips, exercises, and real-world examples to help learners build confidence and achieve their learning goals.",
-          features: ["Comprehensive learning strategies", "Practical exercises", "Real-world examples"],
-          specs: [
-          ],
-          badges: ["Bestseller", "New"],
-          tags: ["study guide", "learning", "self-improvement"],
-          stock: "in_stock",
-          quantityAvailable: 99,
-          digital: false,
-          weightKg: 1.2,
-          widthCm: 24,
-          heightCm: 36,
-          depthCm: 24,
-          ctaLabel: "Buy Now",
-          maxQuantity: 99,
-        },
-        {
-          id: "PDF-002",
-          name: "BioHacks: Science Backed Longevity & Vitality",
-          subtitle: "Practical biohacks for enhancing longevity, vitality, and overall well-being.",
-          sku: "CMF-R6",
-          price: 3500,
-          compareAtPrice: 4500,
-          currency: "USD",
-          thumbnailUrl: blog4.src,
-          images: [
-            { url: blog4.src, alt: "BioHacks: longevity & Vitality 1" },
-          ],
-          summary: " A concise guide to adopting the 'BioHacks: longevity & Vitality' mindset and strategies.",
-          description:
-            "biohacks that provide a step-by-step approach to enhancing longevity and vitality effectively. It includes practical tips, exercises, and real-world examples to help individuals improve their well-being and achieve their health goals.",
-          features: ["Comprehensive biohacking strategies", "Practical exercises", "Real-world examples"],
-          specs: [
-          ],
-          badges: ["Bestseller", "Discount", "Limited Edition"],
-          tags: ["biohacks", "longevity", "well-being"],
-          stock: "in_stock",
-          quantityAvailable: 99,
-          digital: false,
-          weightKg: 1.2,
-          widthCm: 24,
-          heightCm: 36,
-          depthCm: 24,
-          ctaLabel: "Buy Now",
-          maxQuantity: 99,
-        },
-
-      ],
+      productIds: ["PDF-001", "PDF-002"],
     },
 
     // ======================
@@ -578,4 +514,59 @@ At the center of it all is love and family. They keep me grounded, patient, and 
       legal: "© 2026 Mark Stricker. All rights reserved.",
     },
   ],
+  products: {
+    items: [
+      {
+        id: "PDF-001",
+        name: "Study Guide: Learn Like a Hero",
+        subtitle: "A learning philosophy for building momentum, confidence, and repeatable progress.",
+        sku: "CMF-R6",
+        price: 5500,
+        currency: "USD",
+        thumbnailUrl: blog1.src,
+        images: [
+          { url: blog1.src, alt: "Study Guide: Learn Like a Hero 1" },
+        ],
+        summary: " A concise guide to adopting the 'Learn Like a Hero' mindset and strategies.",
+        description:
+          "This study guide provides a step-by-step approach to mastering new skills and knowledge effectively. It includes practical tips, exercises, and real-world examples to help learners build confidence and achieve their learning goals.",
+        features: ["Comprehensive learning strategies", "Practical exercises", "Real-world examples"],
+        badges: ["Bestseller", "New"],
+        stock: "in_stock",
+        quantityAvailable: 99,
+        ctaLabel: "Buy Now",
+        maxQuantity: 99,
+      },
+      {
+        id: "PDF-002",
+        name: "BioHacks: Science Backed Longevity & Vitality",
+        subtitle: "Practical biohacks for enhancing longevity, vitality, and overall well-being.",
+        sku: "CMF-R6",
+        price: 3500,
+        compareAtPrice: 4500,
+        currency: "USD",
+        thumbnailUrl: blog4.src,
+        images: [
+          { url: blog4.src, alt: "BioHacks: longevity & Vitality 1" },
+        ],
+        summary: " A concise guide to adopting the 'BioHacks: longevity & Vitality' mindset and strategies.",
+        description:
+          "biohacks that provide a step-by-step approach to enhancing longevity and vitality effectively. It includes practical tips, exercises, and real-world examples to help individuals improve their well-being and achieve their health goals.",
+        features: ["Comprehensive biohacking strategies", "Practical exercises", "Real-world examples"],
+        badges: ["Bestseller", "Discount", "Limited Edition"],
+        stock: "in_stock",
+        quantityAvailable: 99,
+        ctaLabel: "Buy Now",
+        maxQuantity: 99,
+      },
+
+    ],
+  },
+  settings: {
+    payments: {
+    cartActive: true,
+    paymentType: "externalLink",
+    externalPaymentUrl: "https://venmo.com/u/Mark-Stricker-2?txn=pay&note=Purchase&amount=",
+    },
+  },
 };

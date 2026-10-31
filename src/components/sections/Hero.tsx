@@ -6,8 +6,7 @@ import { motion } from 'framer-motion';
 import AnimatedSection from '@/components/AnimatedSection';
 import { resolveAssetUrl } from '@/lib/assetUrl';
 
-export function Hero({ id, eyebrow, title, subtitle, primaryCta, secondaryCta, imageUrl }: HeroSection) {
-  console.log('Hero imageUrl:', imageUrl);
+export function Hero({ id, eyebrow, title, subtitle, primaryCta, secondaryCta, imageUrl, roundedImage }: HeroSection) {
   const imgUrl = resolveAssetUrl(imageUrl);
   return (
     <section id={id} className="section curve bg-app  !pt-[0] !pr-0">
@@ -39,7 +38,20 @@ export function Hero({ id, eyebrow, title, subtitle, primaryCta, secondaryCta, i
             </motion.div>
           </div>
 
-          {imgUrl ? (
+          {imgUrl && roundedImage ? (
+            <motion.div
+              initial={{ opacity: 0, scale: .94, y: 16 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: .6, ease: 'easeOut', delay: .1 }}
+              className="relative w-fit mx-auto p-4"
+            >
+              {/* soft blob shadow */}
+              <div className="absolute -inset-6 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] blur-2xl -z-10" />
+              <div className="overflow-hidden rounded-full max-h-[600px] max-w-[600px] mx-auto aspect-square">
+                <Image src={imgUrl} alt="" width={980} height={980} className="w-full h-full object-cover" />
+              </div>
+            </motion.div>
+          ) : imgUrl ? (
             <motion.div
               initial={{ opacity: 0, scale: .94, y: 16 }}
               whileInView={{ opacity: 1, scale: 1, y: 0 }}

@@ -186,6 +186,7 @@ export type HeroSection = SectionBase & {
   primaryCta?: { label: string; href: string };
   secondaryCta?: { label: string; href: string };
   imageUrl?: string;
+  roundedImage?: boolean; // true = circular (100% rounded) image
 };
 
 export type PageLinkItem = {
@@ -231,6 +232,7 @@ export type AboutSection = SectionBase & {
   imageUrl?: string;      // headshot or supporting image
   bullets?: string[];     // optional quick facts
   align?: 'left' | 'right' | 'center'; // image/text alignment
+  roundedImage?: boolean; // true = circular (100% rounded) image; unset = circular only when align is left
 };
 
 // ✅ NEW: Disclaimer (used in your config)

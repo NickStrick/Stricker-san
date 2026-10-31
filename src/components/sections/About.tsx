@@ -7,9 +7,20 @@ import Image from "next/image";
 import { resolveAssetUrl } from '@/lib/assetUrl';
 import {SeperatorWave} from '@/components/SeperatorWave';
 
-export function About({ id, title = 'About', subtitle, body, imageUrl, bullets, align = 'left', backgroundClass = 'bg-[var(--bg)', topWaveType, bottomWaveType }: AboutSection) {
+export function About({ id, title = 'About', subtitle, body, imageUrl, roundedImage, bullets, align = 'left', backgroundClass = 'bg-[var(--bg)', topWaveType, bottomWaveType }: AboutSection) {
   const imageFirst = align === 'left';
   const imgUrl = resolveAssetUrl(imageUrl);
+  // Unset keeps the original look: circular when the image is on the left, rectangular otherwise.
+  const rounded = roundedImage ?? imageFirst;
+  const image = rounded ? (
+    <div className="overflow-hidden rounded-full max-h-[800px] max-w-[800px] mx-auto z-2 relative aspect-square">
+      <Image width={800} height={800} src={imgUrl ?? ''} alt={title} className="w-full h-full object-cover" />
+    </div>
+  ) : (
+    <div className="overflow-hidden rounded-sm max-h-[800px] max-w-[800px] mx-auto">
+      <Image src={imgUrl ?? ''} alt={title} width={1080} height={840} className="w-full h-auto" />
+    </div>
+  );
   const hasWaves = backgroundClass.includes('bg-solid-primary');
   return (<>
     <SeperatorWave type={topWaveType} flip={false} color={'var(--bg)'} />
@@ -24,9 +35,7 @@ export function About({ id, title = 'About', subtitle, body, imageUrl, bullets, 
               className="relative w-fit mx-auto"
             >
             {/* <div className="absolute -inset-6 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] blur-2xl z-0" /> */}
-            <div className="overflow-hidden rounded-full max-h-[800px] max-w-[800px] z-2 relative aspect-square">
-              <Image width={800} height={800} src={imgUrl} alt={title} className="w-full rounded-xl object-cover" />
-            </div>
+            {image}
           </motion.div>
         )}
         <AnimatedSection className="mx-auto max-w-6xl p-4">
@@ -49,9 +58,7 @@ export function About({ id, title = 'About', subtitle, body, imageUrl, bullets, 
             >
               {/* soft blob shadow */}
               {/* <div className="absolute -inset-6 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] blur-2xl -z-10" /> */}
-              <div className="overflow-hidden rounded-sm max-h-[800px] max-w-[800px] mx-auto">
-                <Image src={imgUrl} alt="" width={1080} height={840} className="w-full h-auto" />
-              </div>
+              {image}
             </motion.div>
         )}
       </div>

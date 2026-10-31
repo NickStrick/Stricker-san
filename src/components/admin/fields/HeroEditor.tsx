@@ -94,6 +94,18 @@ export function EditHero({
         {section.imageUrl && (
           <div className="text-xs text-muted break-all mt-1">{section.imageUrl}</div>
         )}
+        <div className="flex items-center gap-3">
+          <input
+            id="hero-rounded-image"
+            type="checkbox"
+            className="checkbox"
+            checked={section.roundedImage ?? false}
+            onChange={(e) => onChange({ ...section, roundedImage: e.target.checked })}
+          />
+          <label htmlFor="hero-rounded-image" className="text-sm">
+            Rounded image (circle)
+          </label>
+        </div>
       </div>
 
       {/* CTAs */}

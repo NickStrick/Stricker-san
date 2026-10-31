@@ -95,6 +95,18 @@ export function EditAbout({
             Pick…
           </button>
         </div>
+        <div className="flex items-center gap-3">
+          <input
+            id="about-rounded-image"
+            type="checkbox"
+            className="checkbox"
+            checked={section.roundedImage ?? (section.align ?? 'left') === 'left'}
+            onChange={(e) => set('roundedImage', e.target.checked)}
+          />
+          <label htmlFor="about-rounded-image" className="text-sm">
+            Rounded image (circle)
+          </label>
+        </div>
       </div>
 
       {/* Align */}

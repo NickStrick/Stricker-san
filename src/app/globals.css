@@ -143,10 +143,10 @@ body[data-theme="lavender"] {
   --text-accent: #d4af37;/* gold as text accent */
 }
 body[data-theme="splunk"] {
-  --primary: #65c23a;   /* neon green */
+  --primary: #d44e00;   /* neon green */
   --accent:  #fc790e;   /* magenta */
   --bg:      #251a1f; 
-  --bg-2    : #257500;
+  --bg-2    : #d44e00;
   --fg:      #e5e7eb;   /* light gray text */
   --muted:   #9ca3af;
   --band-1:  #fc790e;

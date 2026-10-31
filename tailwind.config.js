@@ -14,6 +14,11 @@ module.exports = {
   // },
   theme: {
     extend: {
+      screens: {
+        nav: '1275px',
+        mlg: '975px',
+        xs: '445px',
+      },
       colors: {
         cream: {
           light: "#F5F3E7",  // base cream

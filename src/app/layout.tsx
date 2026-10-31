@@ -1,12 +1,14 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { SiteProvider } from "@/context/SiteContext";
 import { CartProvider } from "@/context/CartContext";
-import type { SiteConfig } from "@/types/site";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import GlobalHashLinkHandler from "@/components/GlobalHashLinkHandler";
+import PaymentsOverlay from "@/components/payments/PaymentsOverlay";
 
 // ✅ Admin UI (client) — keyboard toggle + bar
 import AdminGate from "@/components/admin/AdminGate";
@@ -14,46 +16,59 @@ import AdminBar from "@/components/admin/AdminBar";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const googleAdsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || "";
 
-// import { mockSiteConfig } from "@/mocks/siteConfig";
-import { mockSiteConfig } from "@/mocks/markConfig";
+import { getSiteConfig } from "@/lib/siteConfigLoader";
+import SeoLocalBusinessSchema from "@/components/SeoLocalBusinessSchema";
+import { BUSINESS, DEFAULT_DESCRIPTION, DEFAULT_TITLE, KEYWORDS, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: mockSiteConfig.meta?.title || "Stricker Digital Websites",
-  description: mockSiteConfig.meta?.description || "Stricker Digital Websites",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: DEFAULT_TITLE,
+    template: `%s | ${BUSINESS.name}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  keywords: KEYWORDS,
+  applicationName: BUSINESS.name,
+  authors: [{ name: BUSINESS.founder, url: SITE_URL }],
+  creator: BUSINESS.founder,
+  category: "technology",
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      // helps prevent snippet weirdness, not required but solid
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: BUSINESS.name,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    locale: "en_US",
+    images: [{ url: BUSINESS.ogImage, alt: `${BUSINESS.founder} — ${BUSINESS.jobTitle}` }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [BUSINESS.ogImage],
+  },
+  other: {
+    "geo.region": "US-IL",
+    "geo.placename": "Chicago",
+  },
 };
-
-
-async function getSiteConfig(): Promise<SiteConfig> {
-  const useMock = process.env.NEXT_PUBLIC_USE_MOCK === "1";
-  if (useMock) return mockSiteConfig;
-
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-  const site = process.env.NEXT_PUBLIC_SITE_ID ?? "carole";
-  const prefer = (process.env.NEXT_PUBLIC_CONFIG_VARIANT ?? "published") as "draft" | "published";
-  const fallback = prefer === "draft" ? "published" : "draft";
-
-  async function fetchJSON(url: string) {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.warn(`[config] ${url} -> ${res.status}`, text?.slice(0, 200));
-      return null;
-    }
-    return (await res.json()) as SiteConfig;
-  }
-
-  // try preferred variant for this site id
-  const primary = await fetchJSON(`${base}/api/config?variant=${prefer}&site=${encodeURIComponent(site)}`);
-  if (primary) return primary;
-
-  // then the other variant
-  const secondary = await fetchJSON(`${base}/api/config?variant=${fallback}&site=${encodeURIComponent(site)}`);
-  if (secondary) return secondary;
-
-  console.warn("[config] Falling back to mockSiteConfig");
-  return mockSiteConfig;
-}
 
 
 export default async function RootLayout({
@@ -67,13 +82,30 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <SeoLocalBusinessSchema />
+        {googleAdsId ? (
+          <>
+            <Script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-gtag" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${googleAdsId}');`}
+            </Script>
+          </>
+        ) : null}
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-app`}>
         <SiteProvider initial={config}>
           <CartProvider>
+            <GlobalHashLinkHandler />
+            <PaymentsOverlay />
             <main className="overflow-hidden"><div id="top"></div>{children}</main>
-            {showThemeSwitcher && <ThemeSwitcher />}
+          {showThemeSwitcher && <ThemeSwitcher />}
 
           {/* ✅ Admin overlay (toggle with Ctrl/Cmd + Alt + A OR Ctrl/Cmd + Shift + A)
               Also supports ?admin=1 and persists via localStorage */}

@@ -25,6 +25,14 @@ import EditNewsletter from './fields/NewsletterEditor';
 import EditDisclaimer from './fields/DisclaimerEditor';
 import EditProductListings from './fields/EditProductListings';
 import EditPersons from './fields/PersonsEditor';
+import EditSendAMessage from './fields/SendAMessageEditor';
+import EditProductShop from './fields/ProductShopEditor';
+import EditSocials from './fields/SocialsEditor';
+import EditSkills from './fields/SkillsEditor';
+import EditPageLinks from './fields/PageLinksEditor';
+import EditBannerCarousel from './fields/BannerCarouselEditor';
+import EditClassDetail from './fields/EditClassDetail';
+import EditClassList from './fields/EditClassList';
 
 // -----------------------------
 // Shared types & helpers
@@ -32,6 +40,8 @@ import EditPersons from './fields/PersonsEditor';
 export type EditorSharedProps = {
   /** Promise-based bridge into your MediaPicker modal */
   openMediaPicker: (prefix: string) => Promise<string | null>;
+  /** Multi-select variant; resolves with the picked keys (or null if cancelled). */
+  openMediaPickerMulti?: (prefix: string, initialSelected?: string[]) => Promise<string[] | null>;
   /** Current site namespace (e.g., "carole") */
   siteId: string;
 };
@@ -72,7 +82,15 @@ export const SECTION_EDITORS: Partial<Record<AnySection['type'], EditorComponent
   newsletter: EditNewsletter as EditorComponent<AnySection>,
   disclaimer: EditDisclaimer as EditorComponent<AnySection>,
   productListings: EditProductListings as EditorComponent<AnySection>,
-  persons: EditPersons as EditorComponent<AnySection>
+  persons: EditPersons as EditorComponent<AnySection>,
+  sendAMessage: EditSendAMessage as EditorComponent<AnySection>,
+  productShop: EditProductShop as EditorComponent<AnySection>,
+  socials: EditSocials as EditorComponent<AnySection>,
+  skills: EditSkills as EditorComponent<AnySection>,
+  pageLinks: EditPageLinks as EditorComponent<AnySection>,
+  bannerCarousel: EditBannerCarousel as EditorComponent<AnySection>,
+  classDetail: EditClassDetail as EditorComponent<AnySection>,
+  classList: EditClassList as EditorComponent<AnySection>,
   // Add more as you implement them…
 };
 

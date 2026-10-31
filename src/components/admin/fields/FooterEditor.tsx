@@ -5,7 +5,9 @@ import type { FooterSection } from '@/types/site';
 import type { EditorProps } from './types';
 import { useSite } from '@/context/SiteContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronUp, faChevronDown, faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faChevronUp, faChevronDown, faTrash, faPlus, faCircleQuestion } from '@fortawesome/free-solid-svg-icons';
+import { SOCIAL_LINKS_HELP, getUsableGlobalSocialLinks } from '@/lib/socialLinks';
+import { PHONE_NUMBERS_HELP, getUsableGlobalPhones, phoneHref } from '@/lib/phoneNumbers';
 
 // tiny immutable helper (kept consistent with other editors)
 function deepClone<T>(obj: T): T {
@@ -15,8 +17,10 @@ function deepClone<T>(obj: T): T {
 // infer mode from href
 function hrefKind(href?: string) {
   if (!href) return { kind: 'external' as const, sectionId: '' };
+  if (href === '/') return { kind: 'internal' as const, sectionId: '/' };
   if (href.startsWith('/#')) return { kind: 'internal' as const, sectionId: href.slice(2) };
   if (href.startsWith('#')) return { kind: 'internal' as const, sectionId: href.slice(1) };
+  if (href.startsWith('/')) return { kind: 'sub-page' as const, sectionId: '' };
   return { kind: 'external' as const, sectionId: '' };
 }
 
@@ -26,7 +30,17 @@ export default function EditFooter({
 }: EditorProps<FooterSection>) {
   const columns = section.columns ?? [];
   const { config } = useSite();
-  const allSections = useMemo(() => config?.sections ?? [], [config?.sections]);
+  // Dedupe by id: a config can end up with duplicate section ids (bad data),
+  // which would otherwise crash this dropdown on a React "duplicate key" error.
+  const allSections = useMemo(() => {
+    const seen = new Set<string>();
+    return (config?.sections ?? []).filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
+  }, [config?.sections]);
+  const allPages = useMemo(() => config?.pages ?? [], [config?.pages]);
+  // Settings → General → Social Media links offered by the "Social" link mode
+  const globalLinks = getUsableGlobalSocialLinks(config);
+  // Settings → General → Phone Numbers offered by the "Phone" link mode
+  const globalPhones = getUsableGlobalPhones(config);
 
   const setField = useCallback(
     <K extends keyof FooterSection>(key: K, value: FooterSection[K]) => {
@@ -161,7 +175,7 @@ export default function EditFooter({
         {columns.map((col, ci) => {
           const links = col.links ?? [];
           return (
-            <div key={`footer-col-${ci}`} className="card p-3 space-y-3">
+            <div key={`footer-col-${ci}`} className="card admin-card card-solid p-3 space-y-3">
               <div className="flex items-center gap-2">
                 <input
                   className="input flex-1"
@@ -197,14 +211,26 @@ export default function EditFooter({
               {/* Links */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs opacity-70">Links</div>
+                  <div className="text-xs opacity-70 flex items-center gap-2">
+                    Links
+                    <span
+                      className="cursor-help"
+                      title={`Choose "Social" to use a universal link. ${SOCIAL_LINKS_HELP}\n\nChoose "Phone" to use a universal phone number. ${PHONE_NUMBERS_HELP}`}
+                      aria-label={`${SOCIAL_LINKS_HELP} ${PHONE_NUMBERS_HELP}`}
+                    >
+                      <FontAwesomeIcon icon={faCircleQuestion} className="text-sm" />
+                    </span>
+                  </div>
                   <button className="btn btn-ghost" onClick={() => addLink(ci)}>
                     <FontAwesomeIcon icon={faPlus} className="text-xs" />Add link
                   </button>
                 </div>
 
                 {links.map((lnk, li) => {
-                  const { kind, sectionId } = hrefKind(lnk.href);
+                  const { kind: hrefMode, sectionId } = hrefKind(lnk.href);
+                  const kind = lnk.phoneId ? 'phone' : lnk.globalId ? 'social' : hrefMode;
+                  const linkedSocial = lnk.globalId ? globalLinks.find((l) => l.id === lnk.globalId) : undefined;
+                  const linkedPhone = lnk.phoneId ? globalPhones.find((p) => p.id === lnk.phoneId) : undefined;
 
                   return (
                     <div
@@ -214,7 +240,20 @@ export default function EditFooter({
                       {/* Label */}
                       <input
                         className="input"
-                        placeholder="Label"
+                        placeholder={
+                          kind === 'social' && linkedSocial
+                            ? `${linkedSocial.name || 'Untitled link'} (from Settings)`
+                            : kind === 'phone' && linkedPhone
+                              ? `${linkedPhone.number} (from Settings)`
+                              : 'Label'
+                        }
+                        title={
+                          kind === 'social'
+                            ? 'Leave empty to always show the Settings link name'
+                            : kind === 'phone'
+                              ? 'Leave empty to always show the Settings phone number'
+                              : undefined
+                        }
                         value={lnk.label}
                         onChange={(e) => updateLink(ci, li, { label: e.target.value })}
                       />
@@ -224,35 +263,106 @@ export default function EditFooter({
                         className="select w-36"
                         value={kind}
                         onChange={(e) => {
-                          const nextKind = e.target.value as 'internal' | 'external';
+                          const nextKind = e.target.value as 'internal' | 'external' | 'sub-page' | 'social' | 'phone';
+                          const clearIds = { globalId: undefined, phoneId: undefined };
                           if (nextKind === 'internal') {
                             const first = allSections[0]?.id ?? '';
-                            updateLink(ci, li, { href: first ? `/#${first}` : '' });
+                            updateLink(ci, li, { href: first ? `/#${first}` : '', ...clearIds });
+                          } else if (nextKind === 'sub-page') {
+                            const first = allPages[0]?.slug ?? '';
+                            updateLink(ci, li, { href: first ? `/${first.replace(/^\/+/, '')}` : '', ...clearIds });
+                          } else if (nextKind === 'social') {
+                            const first = globalLinks[0];
+                            if (first) {
+                              updateLink(ci, li, { ...clearIds, globalId: first.id, href: first.href });
+                            }
+                          } else if (nextKind === 'phone') {
+                            const first = globalPhones[0];
+                            if (first) {
+                              updateLink(ci, li, { ...clearIds, phoneId: first.id, href: phoneHref(first.number) });
+                            }
                           } else {
-                            updateLink(ci, li, { href: '' });
+                            updateLink(ci, li, { href: '', ...clearIds });
                           }
                         }}
                       >
                         <option value="internal">Internal</option>
+                        <option value="sub-page">Sub-page</option>
                         <option value="external">External</option>
+                        <option value="social" disabled={globalLinks.length === 0 && kind !== 'social'}>
+                          Social{globalLinks.length === 0 ? ' (add in Settings)' : ''}
+                        </option>
+                        <option value="phone" disabled={globalPhones.length === 0 && kind !== 'phone'}>
+                          Phone{globalPhones.length === 0 ? ' (add in Settings)' : ''}
+                        </option>
                       </select>
 
                       {/* Target */}
-                      {kind === 'internal' ? (
+                      {kind === 'phone' ? (
                         <select
                           className="select"
-                          value={sectionId}
+                          value={lnk.phoneId}
+                          onChange={(e) => {
+                            const phone = globalPhones.find((p) => p.id === e.target.value);
+                            if (phone) updateLink(ci, li, { phoneId: phone.id, href: phoneHref(phone.number) });
+                          }}
+                        >
+                          {globalPhones.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name ? `${p.name} — ${p.number}` : p.number}
+                            </option>
+                          ))}
+                          {!linkedPhone && <option value={lnk.phoneId}>Missing number — pick another</option>}
+                        </select>
+                      ) : kind === 'social' ? (
+                        <select
+                          className="select"
+                          value={lnk.globalId}
+                          onChange={(e) => {
+                            const link = globalLinks.find((l) => l.id === e.target.value);
+                            if (link) updateLink(ci, li, { globalId: link.id, href: link.href });
+                          }}
+                          title={linkedSocial?.href}
+                        >
+                          {globalLinks.map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.name || 'Untitled link'}
+                            </option>
+                          ))}
+                          {!linkedSocial && <option value={lnk.globalId}>Missing link — pick another</option>}
+                        </select>
+                      ) : kind === 'internal' ? (
+                        <select
+                          className="select"
+                          value={sectionId || (lnk.href === '/' ? '/' : '')}
                           onChange={(e) => {
                             const id = e.target.value;
-                            updateLink(ci, li, { href: id ? `/#${id}` : '' });
+                            updateLink(ci, li, { href: id === '/' ? '/' : id ? `/#${id}` : '' });
                           }}
                         >
                           <option value="">— Select section —</option>
+                          <option value="/">Home â€¢ Top of page</option>
                           {allSections.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.type.charAt(0).toUpperCase() + s.type.slice(1)} • {s.id}
                             </option>
                           ))}
+                        </select>
+                      ) : kind === 'sub-page' ? (
+                        <select
+                          className="select"
+                          value={lnk.href}
+                          onChange={(e) => updateLink(ci, li, { href: e.target.value })}
+                        >
+                          <option value="">â€” Select page â€”</option>
+                          {allPages.map((page) => {
+                            const href = `/${page.slug.replace(/^\/+/, '')}`;
+                            return (
+                              <option key={page.slug} value={href}>
+                                {page.title || page.slug}
+                              </option>
+                            );
+                          })}
                         </select>
                       ) : (
                         <input

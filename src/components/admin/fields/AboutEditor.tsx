@@ -40,6 +40,16 @@ export function EditAbout({
         />
       </div>
 
+      {/* Subtitle */}
+      <div>
+        <label className="block text-sm font-medium">Subtitle</label>
+        <input
+          className="input w-full"
+          value={section.subtitle ?? ''}
+          onChange={(e) => set('subtitle', e.target.value)}
+        />
+      </div>
+
       {/* Body */}
       <div>
         <label className="block text-sm font-medium">Body</label>
@@ -121,7 +131,7 @@ export function EditAbout({
                 className="input flex-1"
                 value={b}
                 onChange={(e) => updateBullet(i, e.target.value)}
-                placeholder="e.g., 45+ years of floral experience"
+                placeholder="e.g., 10+ years enterprise solutions experience"
               />
               <button
                 type="button"

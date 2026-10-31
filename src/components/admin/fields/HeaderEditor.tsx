@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { HeaderSection, HeaderStyle } from '@/types/site';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronUp, faChevronDown, faTrash, faPlus} from '@fortawesome/free-solid-svg-icons';
@@ -9,12 +9,18 @@ import { useSite } from '@/context/SiteContext';
 export type EditorProps<T> = {
   section: T;
   onChange: (next: T) => void;
-  openMediaPicker: (prefix: string) => Promise<string | null>; // not used here
-  siteId: string; // not used here
+  openMediaPicker: (prefix: string) => Promise<string | null>;
+  siteId: string;
 };
 
 type NavLink = { label: string; href: string };
-type LocalNavLink = NavLink & { _id: string }; // stable key for React
+type NavItem = NavLink & { children?: NavLink[] };
+
+// tiny immutable helper (avoid local shadow state — resyncing local state from
+// props on every keystroke via useEffect regenerates keys and steals input focus)
+function deepClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj)) as T;
+}
 
 function ensureStyle(style?: HeaderStyle): HeaderStyle {
   return {
@@ -25,80 +31,194 @@ function ensureStyle(style?: HeaderStyle): HeaderStyle {
   };
 }
 
-function makeLocalLinks(links: HeaderSection['links']): LocalNavLink[] {
-  const base: NavLink[] = Array.isArray(links) ? links : [];
-  // Attach stable ids
-  return base.map((l) => ({ ...l, _id: crypto.randomUUID() }));
-}
-
 // infer mode from href
 function hrefKind(href?: string) {
   if (!href) return { kind: 'external' as const, sectionId: '' };
+  if (href === '/') return { kind: 'internal' as const, sectionId: '/' };
   if (href.startsWith('/#')) return { kind: 'internal' as const, sectionId: href.slice(2) };
   if (href.startsWith('#')) return { kind: 'internal' as const, sectionId: href.slice(1) };
+  if (href.startsWith('/')) return { kind: 'sub-page' as const, sectionId: '' };
   return { kind: 'external' as const, sectionId: '' };
+}
+
+// Mode selector (internal section / sub-page / external) + the matching target
+// picker. Shared between top-level links and dropdown-group children.
+function LinkTargetFields({
+  href,
+  allSections,
+  allPages,
+  onChangeHref,
+}: {
+  href: string;
+  allSections: { id: string; type: string }[];
+  allPages: { slug: string; title: string }[];
+  onChangeHref: (href: string) => void;
+}) {
+  const { kind, sectionId } = hrefKind(href);
+
+  return (
+    <div className="flex gap-2">
+      {/* Mode */}
+      <select
+        className="select w-36"
+        value={kind}
+        onChange={(e) => {
+          const nextKind = e.target.value as 'internal' | 'external' | 'sub-page';
+          if (nextKind === 'internal') {
+            const first = allSections[0]?.id ?? '';
+            onChangeHref(first ? `/#${first}` : '');
+          } else if (nextKind === 'sub-page') {
+            const first = allPages[0]?.slug ?? '';
+            onChangeHref(first ? `/${first.replace(/^\/+/, '')}` : '');
+          } else {
+            onChangeHref('');
+          }
+        }}
+      >
+        <option value="internal">Internal (section)</option>
+        <option value="sub-page" disabled={allPages.length === 0}>
+          Sub-page{allPages.length === 0 ? ' (no pages yet)' : ''}
+        </option>
+        <option value="external">External URL</option>
+      </select>
+
+      {/* Target */}
+      {kind === 'internal' ? (
+        <select
+          className="select flex-1"
+          value={sectionId}
+          onChange={(e) => {
+            const id = e.target.value;
+            onChangeHref(id === '/' ? '/' : id ? `/#${id}` : '');
+          }}
+        >
+          <option value="">— Select section —</option>
+          <option value="/">Home • Top of page</option>
+          {allSections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.type.charAt(0).toUpperCase() + s.type.slice(1)} • {s.id}
+            </option>
+          ))}
+        </select>
+      ) : kind === 'sub-page' ? (
+        <select
+          className="select flex-1"
+          value={href}
+          onChange={(e) => onChangeHref(e.target.value)}
+        >
+          <option value="">— Select page —</option>
+          {allPages.map((page) => {
+            const pageHref = `/${page.slug.replace(/^\/+/, '')}`;
+            return (
+              <option key={page.slug} value={pageHref}>
+                {page.title || page.slug}
+              </option>
+            );
+          })}
+        </select>
+      ) : (
+        <input
+          className="input flex-1"
+          value={href}
+          onChange={(e) => onChangeHref(e.target.value)}
+          placeholder="https://…, /contact, mailto:…, tel:…"
+        />
+      )}
+    </div>
+  );
 }
 
 export function EditHeader({
   section,
   onChange,
+  openMediaPicker,
+  siteId,
 }: EditorProps<HeaderSection>) {
   const { config } = useSite(); // 👈 get sections without changing props
-  const allSections = useMemo(() => config?.sections ?? [], [config?.sections]);
+  // Dedupe by id: a config can end up with duplicate section ids (bad data),
+  // which would otherwise crash this dropdown on a React "duplicate key" error.
+  const allSections = useMemo(() => {
+    const seen = new Set<string>();
+    return (config?.sections ?? []).filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
+  }, [config?.sections]);
+  const allPages = useMemo(() => config?.pages ?? [], [config?.pages]);
 
-  const [localLinks, setLocalLinks] = useState<LocalNavLink[]>(() =>
-    makeLocalLinks(section.links)
-  );
-
-  // If the section.links reference changes from outside, resync local state
-  useEffect(() => {
-    setLocalLinks(makeLocalLinks(section.links));
-  }, [section.links]);
-
+  const links = section.links ?? [];
   const style = ensureStyle(section.style);
 
-  // Push localLinks back to section when they change
-  const commitLinks = (next: LocalNavLink[]) => {
-    setLocalLinks(next);
-    const stripped: NavLink[] = next.map(({ ...rest }) => rest);
-    onChange({ ...section, links: stripped });
-  };
+  const setLinks = (next: NavItem[]) => onChange({ ...section, links: next });
 
   // ---- logo text ----
   const setLogoText = (logoText?: string) =>
     onChange({ ...section, logoText });
 
   // ---- links CRUD ----
-  const updateLink = (id: string, patch: Partial<NavLink>) => {
-    const next = localLinks.map((l) =>
-      l._id === id ? { ...l, ...patch } : l
-    );
-    commitLinks(next);
+  const updateLink = (idx: number, patch: Partial<NavLink>) => {
+    const next = deepClone(links);
+    next[idx] = { ...next[idx], ...patch };
+    setLinks(next);
   };
 
   const addLink = () => {
-    const next = [
-      ...localLinks,
-      { _id: crypto.randomUUID(), label: 'New', href: '' },
-    ];
-    commitLinks(next);
+    setLinks([...links, { label: 'New', href: '' }]);
   };
 
-  const removeLink = (id: string) => {
-    const next = localLinks.filter((l) => l._id !== id);
-    commitLinks(next);
+  const removeLink = (idx: number) => {
+    setLinks(links.filter((_, i) => i !== idx));
   };
 
-  const moveLink = (id: string, dir: -1 | 1) => {
-    const idx = localLinks.findIndex((l) => l._id === id);
-    if (idx < 0) return;
-    const j = idx + dir;
-    if (j < 0 || j >= localLinks.length) return;
-    const next = [...localLinks];
-    const tmp = next[idx];
-    next[idx] = next[j];
-    next[j] = tmp;
-    commitLinks(next);
+  const moveLink = (idx: number, dir: -1 | 1) => {
+    const to = idx + dir;
+    if (to < 0 || to >= links.length) return;
+    const next = deepClone(links);
+    const [row] = next.splice(idx, 1);
+    next.splice(to, 0, row);
+    setLinks(next);
+  };
+
+  // ---- dropdown-group CRUD (a top-level item with `children` renders as a
+  // "Label ▾" group in the nav instead of a direct link) ----
+  const makeGroup = (idx: number) => {
+    const next = deepClone(links);
+    next[idx] = { ...next[idx], children: next[idx].children ?? [{ label: 'New', href: '' }] };
+    setLinks(next);
+  };
+
+  const removeGroup = (idx: number) => {
+    const next = deepClone(links);
+    delete next[idx].children;
+    setLinks(next);
+  };
+
+  const updateChild = (idx: number, childIdx: number, patch: Partial<NavLink>) => {
+    const next = deepClone(links);
+    const children = next[idx].children ?? [];
+    children[childIdx] = { ...children[childIdx], ...patch };
+    next[idx] = { ...next[idx], children };
+    setLinks(next);
+  };
+
+  const addChild = (idx: number) => {
+    const next = deepClone(links);
+    next[idx] = { ...next[idx], children: [...(next[idx].children ?? []), { label: 'New', href: '' }] };
+    setLinks(next);
+  };
+
+  const removeChild = (idx: number, childIdx: number) => {
+    const next = deepClone(links);
+    next[idx] = { ...next[idx], children: (next[idx].children ?? []).filter((_, i) => i !== childIdx) };
+    setLinks(next);
+  };
+
+  const moveChild = (idx: number, childIdx: number, dir: -1 | 1) => {
+    const next = deepClone(links);
+    const children = next[idx].children ?? [];
+    const to = childIdx + dir;
+    if (to < 0 || to >= children.length) return;
+    const [row] = children.splice(childIdx, 1);
+    children.splice(to, 0, row);
+    next[idx] = { ...next[idx], children };
+    setLinks(next);
   };
 
   // ---- CTA (optional) ----
@@ -126,8 +246,41 @@ export function EditHeader({
           className="input w-full"
           value={section.logoText ?? ''}
           onChange={(e) => setLogoText(e.target.value)}
-          placeholder="e.g., CM Florals"
+          placeholder="e.g., Mark Stricker"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">Logo Image</label>
+        <div className="flex gap-2">
+          <input
+            className="input flex-1"
+            value={section.logoImage ?? ''}
+            onChange={(e) => onChange({ ...section, logoImage: e.target.value })}
+            placeholder={`configs/${siteId}/assets/… or https://…`}
+          />
+          <button
+            type="button"
+            className="btn btn-inverted flex-shrink-0"
+            onClick={async () => {
+              const picked = await openMediaPicker(`configs/${siteId}/assets/`);
+              if (picked) onChange({ ...section, logoImage: picked });
+            }}
+          >
+            Pick…
+          </button>
+          {section.logoImage ? (
+            <button
+              type="button"
+              className="btn btn-ghost flex-shrink-0"
+              onClick={() => onChange({ ...section, logoImage: '' })}
+              title="Remove logo image"
+            >
+              <FontAwesomeIcon icon={faTrash} className="text-sm" />
+            </button>
+          ) : null}
+        </div>
+        <div className="text-xs text-muted mt-1">Shown as a small circle beside the logo text. Square images work best.</div>
       </div>
 
       {/* Links */}
@@ -138,82 +291,103 @@ export function EditHeader({
             <FontAwesomeIcon icon={faPlus} className="text-xs" />Add Link
           </button>
         </div>
+        <p className="text-xs text-muted">
+          Got a lot of links? Group related ones into a dropdown (e.g. "Services") with "+ Make dropdown" below, instead of adding many separate top-level links — it keeps the header from getting crowded.
+        </p>
 
-        {localLinks.length === 0 && (
+        {links.length === 0 && (
           <div className="text-sm text-muted">No nav links yet.</div>
         )}
 
         <div className="space-y-2">
-          {localLinks.map((lnk, i) => {
-            const { kind, sectionId } = hrefKind(lnk.href);
+          {links.map((lnk, i) => {
+            const isGroup = !!lnk.children;
 
             return (
-              <div key={'linkid-' + i} className="card p-3 flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Label */}
+              <div key={'linkid-' + i} className="card admin-card card-solid p-3 flex flex-col gap-2">
+                {isGroup ? (
                   <input
                     className="input w-full"
                     value={lnk.label}
-                    onChange={(e) => updateLink(lnk._id, { label: e.target.value })}
-                    placeholder="Label (e.g., Home)"
+                    onChange={(e) => updateLink(i, { label: e.target.value })}
+                    placeholder="Group label (e.g., Services)"
                   />
-
-                  {/* Mode selector + target */}
-                  <div className="flex gap-2">
-                    {/* Mode */}
-                    <select
-                      className="select w-36"
-                      value={kind}
-                      onChange={(e) => {
-                        const nextKind = e.target.value as 'internal' | 'external';
-                        if (nextKind === 'internal') {
-                          // switch to internal: default to first section or blank
-                          const first = allSections[0]?.id ?? '';
-                          updateLink(lnk._id, { href: first ? `/#${first}` : '' });
-                        } else {
-                          // switch to external: keep existing external or blank
-                          updateLink(lnk._id, { href: '' });
-                        }
-                      }}
-                    >
-                      <option value="internal">Internal (section)</option>
-                      <option value="external">External URL</option>
-                    </select>
-
-                    {/* Target */}
-                    {kind === 'internal' ? (
-                      <select
-                        className="select flex-1"
-                        value={sectionId}
-                        onChange={(e) => {
-                          const id = e.target.value;
-                          updateLink(lnk._id, { href: id ? `/#${id}` : '' });
-                        }}
-                      >
-                        <option value="">— Select section —</option>
-                        <option value="/">Home • Top of page</option>
-                        {allSections.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.type.charAt(0).toUpperCase() + s.type.slice(1)} • {s.id}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        className="input flex-1"
-                        value={lnk.href}
-                        onChange={(e) => updateLink(lnk._id, { href: e.target.value })}
-                        placeholder="https://…, /contact, mailto:…, tel:…"
-                      />
-                    )}
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      className="input w-full"
+                      value={lnk.label}
+                      onChange={(e) => updateLink(i, { label: e.target.value })}
+                      placeholder="Label (e.g., Home)"
+                    />
+                    <LinkTargetFields
+                      href={lnk.href}
+                      allSections={allSections}
+                      allPages={allPages}
+                      onChangeHref={(href) => updateLink(i, { href })}
+                    />
                   </div>
-                </div>
+                )}
+
+                {isGroup && (
+                  <div className="ml-4 pl-3 border-l-2 border-[color-mix(in_srgb,var(--fg)_15%,transparent)] space-y-2">
+                    {(lnk.children ?? []).map((child, ci) => (
+                      <div key={'childid-' + i + '-' + ci} className="flex flex-col gap-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            className="input w-full"
+                            value={child.label}
+                            onChange={(e) => updateChild(i, ci, { label: e.target.value })}
+                            placeholder="Label (e.g., Weddings)"
+                          />
+                          <LinkTargetFields
+                            href={child.href}
+                            allSections={allSections}
+                            allPages={allPages}
+                            onChangeHref={(href) => updateChild(i, ci, { href })}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-ghost"
+                            onClick={() => moveChild(i, ci, -1)}
+                            disabled={ci === 0}
+                            title="Move up"
+                          >
+                            <FontAwesomeIcon icon={faChevronUp} className="text-sm" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost"
+                            onClick={() => moveChild(i, ci, +1)}
+                            disabled={ci === (lnk.children?.length ?? 0) - 1}
+                            title="Move down"
+                          >
+                            <FontAwesomeIcon icon={faChevronDown} className="text-sm" />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost text-red-600 ml-auto"
+                            onClick={() => removeChild(i, ci)}
+                            title="Remove sub-link"
+                          >
+                            <FontAwesomeIcon icon={faTrash} className="text-sm" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button className="btn btn-ghost" type="button" onClick={() => addChild(i)}>
+                      <FontAwesomeIcon icon={faPlus} className="text-xs" />Add Sub-link
+                    </button>
+                  </div>
+                )}
 
                 <div className="flex gap-2">
                   <button
                     type="button"
                     className="btn btn-ghost"
-                    onClick={() => moveLink(lnk._id, -1)}
+                    onClick={() => moveLink(i, -1)}
                     disabled={i === 0}
                     title="Move up"
                   >
@@ -222,16 +396,35 @@ export function EditHeader({
                   <button
                     type="button"
                     className="btn btn-ghost"
-                    onClick={() => moveLink(lnk._id, +1)}
-                    disabled={i === localLinks.length - 1}
+                    onClick={() => moveLink(i, +1)}
+                    disabled={i === links.length - 1}
                     title="Move down"
                   >
                     <FontAwesomeIcon icon={faChevronDown} className="text-sm" />
                   </button>
+                  {isGroup ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => removeGroup(i)}
+                      title="Convert back to a single link"
+                    >
+                      Remove dropdown
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => makeGroup(i)}
+                      title="Turn this into a dropdown group"
+                    >
+                      + Make dropdown
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn btn-ghost text-red-600 ml-auto"
-                    onClick={() => removeLink(lnk._id)}
+                    onClick={() => removeLink(i)}
                     title="Remove"
                   >
                     <FontAwesomeIcon icon={faTrash} className="text-sm" />

@@ -28,6 +28,13 @@ import Socials from './sections/Socials';
 import Video from './sections/Video';
 import ProductListings from './sections/ProductListings';
 import Persons from './sections/Persons';
+import ProductShop from './sections/ProductShop';
+import SendAMessage from './sections/SendAMessage';
+import PageLinks from './sections/PageLinks';
+import BannerCarousel from './sections/BannerCarousel';
+import ClassDetail from './sections/ClassDetail';
+import ClassList from './sections/ClassList';
+import SiteDisabled from './sections/SiteDisabled';
 
 // Exhaustiveness helper (nice to have)
 function assertNever(x: never): never {
@@ -120,6 +127,27 @@ export function SectionRenderer({ section }: { section: AnySection }) {
     }
     case 'persons': {
       return <Persons {...section} />;
+    }
+    case 'productShop': {
+      return <ProductShop key={section.id} {...section} />;
+    }
+    case 'sendAMessage': {
+      return <SendAMessage {...section} />;
+    }
+    case 'pageLinks': {
+      return <PageLinks {...section} />;
+    }
+    case 'bannerCarousel': {
+      return <BannerCarousel {...section} />;
+    }
+    case 'classDetail': {
+      return <ClassDetail key={section.id} {...section} />;
+    }
+    case 'classList': {
+      return <ClassList key={section.id} {...section} />;
+    }
+    case 'siteDisabled': {
+      return <SiteDisabled {...section} />;
     }
     default: {
       // if you ever add a new type and forget to handle it,

@@ -1,6 +1,6 @@
 'use client';
 
-import type { AnySection } from '@/types/site';
+import { WAVE_TYPES, type AnySection } from '@/types/site';
 import { sectionRegistry } from './SectionRegistry';
 
 export default function SectionEditor({
@@ -19,7 +19,7 @@ export default function SectionEditor({
   const reg = sectionRegistry[section.type];
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card admin-card card-solid p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="font-semibold">{section.type.toUpperCase()}</div>
       </div>
@@ -46,6 +46,49 @@ export default function SectionEditor({
           />
           <span>Visible</span>
         </label>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium">Top wave</label>
+          <select
+            className="select w-full"
+            value={section.topWaveType ?? ''}
+            onChange={(e) =>
+              onChange({
+                ...section,
+                topWaveType: (e.target.value || undefined) as AnySection['topWaveType'],
+              })
+            }
+          >
+            <option value="" defaultChecked>— none —</option>
+            {WAVE_TYPES.map((waveType) => (
+              <option key={waveType} value={waveType}>
+                {waveType}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium">Bottom wave</label>
+          <select
+            className="select w-full"
+            value={section.bottomWaveType ?? ''}
+            onChange={(e) =>
+              onChange({
+                ...section,
+                bottomWaveType: (e.target.value || undefined) as AnySection['bottomWaveType'],
+              })
+            }
+          >
+            <option value="" defaultChecked>— none —</option>
+            {WAVE_TYPES.map((waveType) => (
+              <option key={waveType} value={waveType}>
+                {waveType}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Type-specific editor */}

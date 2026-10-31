@@ -1,6 +1,6 @@
 // components/CartModal.tsx
 'use client';
-import { ShoppingCart, X, Trash2, Plus } from 'lucide-react';
+import { X, Trash2, Plus } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 function formatPrice(cents: number, currency = 'USD') {
@@ -11,20 +11,10 @@ function formatPrice(cents: number, currency = 'USD') {
 }
 
 export default function CartModal() {
-  const { items, totalCents, currency, openCheckout, removeItem, addItem, isCartOpen, openCart, closeCart } = useCart();
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-  if (!isCartOpen) return (
-    <button onClick={openCart} className="flex flex-row fixed z-[5000] top-[6px] right-4 !p-2 !pr-6 !pl-[25px] btn-gradient text-white rounded-full cart-icon w-[120px]">
-      <ShoppingCart size={24} className="inline-block " /> <span className="ml-1 text-[14px]">Cart</span>
-      {totalQuantity > 0 && <span className="absolute top-3 left-2 white text-[var(--primary)] rounded-full w-5 h-5 text-xs flex items-center justify-center cart-items-count" >{totalQuantity}</span>}
-    </button>
-  );
+  const { items, totalCents, currency, openCheckout, removeItem, addItem, isCartOpen, closeCart } = useCart();
+  if (!isCartOpen) return null;
 
-  return (<>
-    <button onClick={openCart} className="flex flex-row fixed z-[5000] top-[6px] right-4 !p-2 !pr-6 !pl-[25px] btn-gradient text-white rounded-full cart-icon w-[120px]">
-      <ShoppingCart size={24} className="inline-block " /> <span className="ml-1 text-[14px]">Cart</span>
-      {totalQuantity > 0 && <span className="absolute top-3 left-2 white text-[var(--primary)] rounded-full w-5 h-5 text-xs flex items-center justify-center cart-items-count" >{totalQuantity}</span>}
-    </button>
+  return (
     <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/50 backdrop-blur-sm cart-modal-container">
       <div className="bg-white w-full max-w-md  p-6 shadow-2xl relative cart-modal-content">
         <button onClick={closeCart} className="absolute z-[5000] top-4 right-4 text-gray-400 hover:text-black">
@@ -48,15 +38,24 @@ export default function CartModal() {
                         className="h-[100px] w-[100px] rounded-lg object-cover border border-gray-100"
                       />
                     )}
-                    <span className="">
-                      {item.name} {item.quantity > 1 && <span className="opacity-70">x{item.quantity}</span>}
-                    </span>
+                    <div className="min-w-0">
+                      <div>
+                        {item.name} {item.quantity > 1 && <span className="opacity-70">x{item.quantity}</span>}
+                      </div>
+                      {(item.classTimeLabel || item.classLocation) && (
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {item.classTimeLabel}
+                          {item.classTimeLabel && item.classLocation ? ' · ' : ''}
+                          {item.classLocation}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <span className="font-semibold">
                     {formatPrice(item.price * item.quantity, item.currency ?? currency)}
                   </span>
                   <button
-                    onClick={() => addItem({ id: item.id, name: item.name, price: item.price, currency: item.currency, imageUrl: item.imageUrl })}
+                    onClick={() => addItem({ id: item.id, name: item.name, price: item.price, currency: item.currency, imageUrl: item.imageUrl, taxable: item.taxable })}
                     className="text-gray-400 hover:text-emerald-600 transition-colors"
                     aria-label={`Add one more ${item.name}`}
                   >
@@ -85,13 +84,13 @@ export default function CartModal() {
           className="w-full btn-gradient text-white py-4 rounded-xl font-bold transition-all"
           disabled={items.length === 0}
         >
-          Proceed to Secure Checkout
+          Proceed to Checkout
         </button>)
         : (<><div className="text-center text-gray-600">Add items to your cart to proceed to checkout.</div>
           
         </>)}
         </div>
-    </div></>
+    </div>
   );
 }
 // Next Steps

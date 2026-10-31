@@ -9,7 +9,14 @@ export type CartItem = {
   price: number; // cents
   currency?: string;
   imageUrl?: string;
+  options?: Record<string, string>;
   quantity: number;
+  taxable?: boolean;
+  // Class bookings only — carried through to the order + confirmation email.
+  classItemId?: string;
+  classTimeId?: string;
+  classTimeLabel?: string; // pre-formatted, e.g. "Wed, Mar 4 · 6:00 PM"
+  classLocation?: string;
 };
 
 type CartCtx = {

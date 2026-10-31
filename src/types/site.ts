@@ -13,7 +13,25 @@ export type ThemePreset =
   | 'lavender'
   | 'irish'
   | 'splunk'
-  | 'sue';  // new
+  | 'sue'
+  | 'custom';  // user-defined
+
+export const THEME_PRESETS: ThemePreset[] = [
+  'ocean',
+  'sunset',
+  'forest',
+  'slate',
+  'festival',
+  'candy',
+  'neon',
+  'grove',
+  'forest-earthy',
+  'lavender',
+  'irish',
+  'splunk',
+  'sue',
+  'custom',
+];
 
 export type Theme = {
   preset: ThemePreset;
@@ -21,12 +39,41 @@ export type Theme = {
   accent?: string;
   radius?: 'sm' | 'md' | 'lg' | 'xl';
 };
+export type ThemeColors = {
+  primary?: string;
+  accent?: string;
+  bg?: string;
+  bg2?: string;
+  fg?: string;
+  muted?: string;
+  text1?: string;
+  text2?: string;
+};
+export type FontPair =
+  | 'inter'
+  | 'editorial'
+  | 'soft'
+  | 'bold'
+  | 'minimal'
+  | 'classic';
+
 export type SiteStyle = {
   preset: ThemePreset;
-  primary?: string;   
+  primary?: string;
   accent?: string;
+  bg?: string;
+  bg2?: string;
+  fg?: string;
+  muted?: string;
+  text1?: string;
+  text2?: string;
+  colors?: ThemeColors;
   radius?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  fontPair?: FontPair;
 };
+
+export const WAVE_TYPES = ['1-hill', '2-hill', '1-cave', '2-cave'] as const;
+export type WaveType = (typeof WAVE_TYPES)[number];
 
 export type SectionBase = {
   id: string;
@@ -54,14 +101,21 @@ export type SectionBase = {
     | 'video'
     | 'productListings'
     | 'persons'
+    | 'productShop'
+    | 'sendAMessage'
+    | 'pageLinks'
+    | 'bannerCarousel'
+    | 'classDetail'
+    | 'classList'
+    | 'siteDisabled'
     ;
 
   // visible/editable flags to support your builder UI
   visible?: boolean;
   editable?: boolean;
   backgroundClass?: string; // custom bg class (e.g. "bg-gradient-to-r from-blue-500 to-green-500")
-  topWaveType?: string;
-  bottomWaveType?: string;
+  topWaveType?: WaveType;
+  bottomWaveType?: WaveType;
 };
 
 export type AnySection =
@@ -87,7 +141,14 @@ export type AnySection =
   | SocialsSection
   | VideoSection
   | ProductListingsSection
-  | PersonsSection; 
+  | PersonsSection
+  | ProductShopSection
+  | SendAMessageSection
+  | PageLinksSection
+  | BannerCarouselSection
+  | ClassDetailSection
+  | ClassListSection
+  | SiteDisabledSection;
   ;
 // add this near other shared types
 export type HeaderStyle = {
@@ -97,12 +158,21 @@ export type HeaderStyle = {
   transparent?: boolean;           // if true, no solid bg (uses transparent/overlay)
 };
 
+export type HeaderNavLink = { label: string; href: string };
+
+// A top-level nav item is either a plain link, or — when `children` is
+// present — a dropdown group whose label just toggles the menu (its own
+// `href` is unused) and whose children are the actual links.
+export type HeaderNavItem = HeaderNavLink & {
+  children?: HeaderNavLink[];
+};
+
 // update HeaderSection
 export type HeaderSection = SectionBase & {
   type: 'header';
   logoText?: string;
   logoImage?: string;
-  links?: { label: string; href: string }[];
+  links?: HeaderNavItem[];
   cta?: { label: string; href: string };
   style?: HeaderStyle; // 👈 new
 };
@@ -118,10 +188,45 @@ export type HeroSection = SectionBase & {
   imageUrl?: string;
 };
 
+export type PageLinkItem = {
+  label: string;
+  href: string;
+  variant?: 'primary' | 'inverted';
+};
+
+export type PageLinksStyle = {
+  align?: 'left' | 'center' | 'right';
+};
+
+export type PageLinksSection = SectionBase & {
+  type: 'pageLinks';
+  title?: string;
+  subtitle?: string;
+  items: PageLinkItem[];
+  style?: PageLinksStyle;
+};
+
+// Rotating banner strip (same height as the header), one or many ad/link slides
+export type BannerCarouselItem = {
+  backgroundUrl?: string;  // optional background image (S3 key or full URL)
+  overlay?: boolean;       // dark tint over the background image for contrast; default true
+  imageUrl?: string;       // optional flyer/logo image shown to the left of the title/text
+  title?: string;
+  body?: string;
+  href?: string;           // clicking the slide navigates here (internal, sub-page, or external)
+};
+
+export type BannerCarouselSection = SectionBase & {
+  type: 'bannerCarousel';
+  items: BannerCarouselItem[];
+  intervalMs?: number; // auto-rotate interval in ms; default 5000
+};
+
 // ✅ NEW: About
 export type AboutSection = SectionBase & {
   type: 'about';
   title?: string;
+  subtitle?: string;
   body: string;           // markdown or plain text
   imageUrl?: string;      // headshot or supporting image
   bullets?: string[];     // optional quick facts
@@ -140,6 +245,10 @@ export type FeatureMeta = { label: string; value: string };
 export type FeaturesSection = SectionBase & {
   type: 'features';
   title?: string;
+  /** When true, each card with a link is clickable as a whole (image included) and the "Learn more" button is hidden. */
+  cardLink?: boolean;
+  /** Where each card's title/body sit relative to its image (default 'below'). */
+  contentPosition?: 'below' | 'above';
   items: {
     icon?: string;
     title: string;
@@ -169,11 +278,12 @@ export type ContactSection = SectionBase & {
   type: 'contact';
   title?: string;
   email?: string;
-  phone?: { label: string; href: string };
+  /** With `phoneId`, the number comes from Settings → General → Phone Numbers. */
+  phone?: { label: string; href: string; phoneId?: string };
   address?: string;
   mapEmbedUrl?: string;
   backgroundUrl?: string; // optional background image
-  socials?: { label: string; href: string; customIcon?: IconDefinition }[];
+  socials?: { label: string; href: string; customIcon?: IconDefinition; globalId?: string }[];
 };
 
 export type SchedulingSection = SectionBase & {
@@ -185,7 +295,11 @@ export type SchedulingSection = SectionBase & {
 
 export type FooterSection = SectionBase & {
   type: 'footer';
-  columns?: { title?: string; links: { label: string; href: string }[] }[];
+  /**
+   * A link with `globalId` uses that Settings → General → Social Media link's URL;
+   * one with `phoneId` uses that Settings → General → Phone Numbers number.
+   */
+  columns?: { title?: string; links: { label: string; href: string; globalId?: string; phoneId?: string }[] }[];
   legal?: string;
 };
 
@@ -197,6 +311,7 @@ export type SectionalSection = SectionBase & {
   backgroundUrl?: string;   // accepts /public path or external URL
   overlay?: boolean;        // tint overlay for contrast
   align?: 'left' | 'center' | 'right';
+  subtitleAlign?: 'left' | 'center' | 'right'; // default 'center'; independent of title's `align`
   height?: 'xs' | 'sm' | 'md' | 'lg' | 'full'; // hero height presets
   motion?: {
     direction?: 'x' | 'y';
@@ -207,10 +322,61 @@ export type SectionalSection = SectionBase & {
 
 
 
+/** Settings → General → "Toggle Site Unavailable". When enabled, every page renders only the siteDisabled section. */
+export type SiteDisabledSettings = {
+  enabled?: boolean;
+  title?: string;
+  message?: string;
+  logoImage?: string; // S3 key or URL, shown above the title
+  logoRounded?: boolean; // crop the logo to a square and show it as a circle
+  logoSize?: 'sm' | 'md' | 'lg'; // default 'md'
+  socials?: SocialItem[];
+};
+
+export type SiteSettings = {
+  /** Free-form; known keys include businessDisplayName, businessNotificationEmail, siteDisabled (SiteDisabledSettings), socialLinks (GlobalSocialLink[]), phoneNumbers (GlobalPhone[]). */
+  general?: Record<string, unknown>;
+  payments?: PaymentsSettings;
+};
+
+export type SitePage = {
+  /** URL slug — e.g. "about" renders at /about */
+  slug: string;
+  /** Display name used in nav and admin */
+  title: string;
+  /** Sections for this page (header/footer are inherited from the root config) */
+  sections: AnySection[];
+  meta?: { title?: string; description?: string };
+  visible?: boolean;
+};
+
 export type SiteConfig = {
   theme: SiteStyle;
+  /**
+   * Header/footer are stored outside the reorderable `sections` list so they
+   * cannot be moved by users or AI patching.
+   *
+   * Legacy configs may still include header/footer inside `sections`; normalize
+   * at runtime (see `src/lib/siteConfigSections.ts`).
+   */
+  header?: HeaderSection;
+  showHeader?: boolean;
   sections: AnySection[];
+  footer?: FooterSection;
+  showFooter?: boolean;
   meta?: { title?: string; description?: string; favicon?: string };
+  settings?: SiteSettings;
+  products?: SiteProductsConfig;
+  classes?: SiteClassesConfig;
+  /** Custom pages — each gets a dynamic route at /[slug] */
+  pages?: SitePage[];
+};
+
+/** Metadata for a named, saved snapshot of a SiteConfig (see /api/admin/config/[siteId]/versions). */
+export type SiteConfigVersionMeta = {
+  id: string;
+  name: string;
+  savedAt: string; // ISO timestamp
 };
 
 
@@ -417,6 +583,23 @@ export type SocialItem = {
     | 'website';
   href: string; // mailto: allowed for email
   label?: string; // optional label under icon
+  /** When set, type/href come from the matching Settings → General → Social Media link (GlobalSocialLink.id). */
+  globalId?: string;
+};
+
+/** Settings → General → Social Media: a site-wide link that sections pick from a dropdown. */
+/** Settings → General → Phone Numbers: site-wide numbers the Contact section and footer pick from. */
+export type GlobalPhone = {
+  id: string;     // 'phone-xxxx'
+  name: string;   // shown in dropdowns, e.g. "Main" or "Cell"
+  number: string; // shown on the site as typed, e.g. "(630) 448-0108"; the tel: link is built from it
+};
+
+export type GlobalSocialLink = {
+  id: string; // platform name for built-ins (e.g. 'instagram'), 'custom-xxxx' for custom links
+  name: string; // shown in the section dropdowns, e.g. "Instagram 2"
+  type: SocialItem['type']; // icon
+  href: string;
 };
 
 export type SocialsSection = SectionBase & {
@@ -490,7 +673,14 @@ export type ProductSpec = {
 };
 
 export type ProductColor = { name: string; hex?: string; imageUrl?: string };
-export type ProductSize  = { label: string; value?: string };
+export type ProductOptionItem = {
+  label: string;
+  value?: string;
+  order?: number;
+  default?: boolean;
+  price?: number;
+};
+export type ProductOptions = { label: string; optionItems?: ProductOptionItem[] };
 
 
 export type Product = {
@@ -511,34 +701,36 @@ export type Product = {
   description?: string;  // long description (markdown/plain)
 
   features?: string[];   // bullet points
-  specs?: ProductSpec[]; // table
+  // specs?: ProductSpec[]; // table // remove
 
   badges?: string[];     // e.g. "New", "Bestseller"
-  tags?: string[];
+  // tags?: string[];// remove
 
   stock?: 'in_stock' | 'low_stock' | 'out_of_stock';
   quantityAvailable?: number;
 
-  digital?: boolean;     // digital product?
-  weightKg?: number;
-  widthCm?: number;
-  heightCm?: number;
-  depthCm?: number;
-  shippingClass?: string;
+  // digital?: boolean;     // remove
+  // weightKg?: number;// remove
+  // widthCm?: number;// remove
+  // heightCm?: number;// remove
+  // depthCm?: number;// remove
+  // shippingClass?: string;// remove
 
   // where Buy Now leads (until payments are integrated)
   purchaseUrl?: string;  // external checkout or link
   ctaLabel?: string;     // default "Buy Now"
   
-   colors?: ProductColor[];
-  sizes?: ProductSize[];           // e.g. ['S','M','L','XL']
+  colors?: ProductColor[];
+  options?: ProductOptions[];           // e.g. ['S','M','L','XL']
   maxQuantity?: number;          // default 10
+  taxable?: boolean;             // optional override if taxes enabled
 };
 
 export type ProductListingsStyle = {
-  columns?: 1 | 2 | 3;           // default responsive columns, desktop cap at 3
+  columns?: 1 | 2 | 3 | 4 | 5;           // default responsive columns
   cardVariant?: 'default' | 'ink';
   showBadges?: boolean;
+  sectionType?: 'default' | 'short' | 'long';
 };
 
 export type CheckoutInputType =
@@ -571,22 +763,207 @@ export type GoogleFormOptions = {
   totalEntryId?: string;
 };
 
+export type PromoCode = {
+  promoId: string;
+  type: 'percentage' | 'amount';
+  value: number; // percent (e.g. 10 = 10%) for percentage, dollars (e.g. 5 = $5.00) for amount
+};
+
+export type PaymentsSettings = {
+  cartActive?: boolean;        // default false
+  checkoutInputs?: CheckoutInput[];
+  promoCodes?: PromoCode[];
+  googleFormUrl?: string;
+  googleFormSubmitBeforePayment?: boolean;
+  paymentType?: 'converge' | 'clover' | 'square' | 'externalLink';
+  externalPaymentUrl?: string;
+  googleFormOptions?: GoogleFormOptions;
+  supportEmail?: string;
+  supportPhone?: { label: string; href: string };
+  taxes?: {
+    enabled?: boolean;
+    ratePercent?: number; // e.g. 8.25
+    taxShipping?: boolean;
+    defaultProductTaxable?: boolean;
+  };
+  delivery?: {
+    enabled?: boolean;
+    appsScriptUrl?: string;
+    type?: 'flat' | 'uber' | 'doordash';
+    flatFeeCents?: number;
+    mode?: 'pickup' | 'delivery' | 'both';
+    driverTipEnabled?: boolean; // shows an optional driver tip step during delivery checkout
+    addressCapture?: {
+      enabled?: boolean;
+      required?: boolean;
+      method?: 'googleForm' | 's3';
+      googleFormEntryId?: string;
+      s3Prefix?: string;
+    };
+  };
+};
+
+export type SiteProduct = {
+  id: string;
+  name: string;
+  subtitle?: string;
+  sku?: string;
+  category?: string;          // used for tab grouping in ProductShop
+  price: number;              // cents
+  compareAtPrice?: number;
+  currency?: string;
+  thumbnailUrl?: string;
+  images?: ProductImage[];
+  summary?: string;
+  description?: string;
+  features?: string[];
+  badges?: string[];
+  stock?: 'in_stock' | 'low_stock' | 'out_of_stock';
+  quantityAvailable?: number;
+  options?: ProductOptions[];
+  colors?: ProductColor[];
+  maxQuantity?: number;
+  taxable?: boolean;
+  featured?: boolean;         // shows in Best Sellers strip on All tab
+  hideFromShop?: boolean;     // excluded from ProductShop, still listable via ProductListings
+  ctaLabel?: string;
+  purchaseUrl?: string;
+};
+
+export type SiteProductsConfig = {
+  showFilters?: boolean;
+  /** Optional UI ordering for category tabs (first → last). */
+  categoryOrder?: string[];
+  items: SiteProduct[];
+};
+
+export type ProductShopSection = SectionBase & {
+  type: 'productShop';
+  title?: string;
+  subtitle?: string;
+};
+
+export type SendAMessageFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'select';
+
+export type SendAMessageField = {
+  id: string;
+  label: string;
+  type: SendAMessageFieldType;
+  placeholder?: string;
+  required?: boolean;
+  options?: string[]; // for 'select' type
+  step?: number; // 0-based index into SendAMessageSection.steps (default 0)
+};
+
+export type SendAMessageStep = {
+  title?: string;
+};
+
+export type SendAMessageSubmission =
+  | { type: 'resend'; recipientEmail?: string }
+  | {
+      type: 'googleForm';
+      /** Base form URL — viewform or formResponse, both work */
+      formUrl: string;
+      /** Maps your field `id` → Google Form entry ID (e.g. "entry.547818426") */
+      fieldMap: Record<string, string>;
+    };
+
+export type SendAMessageSection = SectionBase & {
+  type: 'sendAMessage';
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  fields: SendAMessageField[];
+  /** Multi-step form when 2+ steps; each field picks its step via `field.step`. */
+  steps?: SendAMessageStep[];
+  submitLabel?: string;
+  successTitle?: string;
+  successMessage?: string;
+  /** @deprecated use submission: { type: 'resend', recipientEmail } instead */
+  recipientEmail?: string;
+  submission?: SendAMessageSubmission; // defaults to resend if omitted
+  backgroundUrl?: string;  // optional hero-style background image
+  overlayOpacity?: number; // 0–100, default 50
+};
+
 export type ProductListingsSection = SectionBase & {
   id: string;
   type: 'productListings';
   title?: string;
   subtitle?: string;
-  products: Product[];
+  /** Ordered list of product IDs resolved from config.products.items */
+  productIds: string[];
+  viewType?: 'list' | 'featured'; // default 'featured'
   style?: ProductListingsStyle;
   showAllThreshold?: number;     // default 3 — show "Show all" if > threshold
   buyCtaFallback?: string;       // default "Buy Now"
-  detailsEnabled?: boolean;        // default false
-  cartActive?: boolean;        // default false
-  checkoutInputs?: CheckoutInput[];
-  googleFormUrl?: string;
-  paymentType?: 'converge' | 'externalLink';
-  externalPaymentUrl?: string;
-  googleFormOptions?: GoogleFormOptions;
+};
+
+// ---- Classes (separate from Products: time-slot bookings, not one-off purchases) ----
+
+export type ClassTime = {
+  id: string;
+  date: string;         // ISO date, e.g. "2026-03-04"
+  startTime: string;    // "18:00"
+  endTime?: string;     // "19:30"
+  capacity?: number;    // max bookings for this slot; undefined = unlimited
+  location?: string;    // e.g. "123 Main St, Studio B"
+  label?: string;       // optional note, e.g. "Beginners"
+};
+
+export type ClassItem = {
+  id: string;
+  name: string;
+  category?: string;
+  subtitle?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  images?: ProductImage[];
+  price: number;                // base price, cents
+  compareAtPrice?: number;
+  currency?: string;
+  options?: ProductOptions[];   // e.g. Size: 4x4 / 5x5 / 6x6, each with its own price
+  /**
+   * Bookable times owned by this class. Canonical field — every reader
+   * should use this. Populated automatically (even for old-shape stored
+   * configs) by `normalizeSiteConfig`, which resolves it from the legacy
+   * `classTimeIds` + shared `classTimes` pool below if not already present.
+   * Empty = not scheduled yet.
+   */
+  times?: ClassTime[];
+  /** @deprecated legacy FK list into `config.classes.classTimes`; superseded by `times`. Kept only so old stored configs keep normalizing correctly. */
+  classTimeIds?: string[];
+  badges?: string[];
+  ctaLabel?: string;            // button label; defaults to the section's buyCtaFallback
+};
+
+export type SiteClassesConfig = {
+  classItems: ClassItem[];
+  /** @deprecated legacy shared pool that `classItem.classTimeIds` used to reference; superseded by `ClassItem.times`. Kept only so old stored configs keep normalizing correctly. */
+  classTimes?: ClassTime[];
+  locations?: string[];         // reusable location names, offered as a dropdown when scheduling a class time
+};
+
+// Single class, shown directly on the page (image, description, options,
+// calendar time picker, book button) — not a browsable grid or a modal.
+export type ClassDetailSection = SectionBase & {
+  id: string;
+  type: 'classDetail';
+  /** Which class to display, resolved from config.classes.classItems */
+  classItemId?: string;
+  buyCtaFallback?: string;      // default "Book Now"
+};
+
+// All scheduled classes (config.classes.classItems with >= 1 assigned time),
+// shown as tabs with the selected class's detail below. Tabs are hidden when
+// only one class qualifies.
+export type ClassListSection = SectionBase & {
+  id: string;
+  type: 'classList';
+  title?: string;
+  subtitle?: string;
+  buyCtaFallback?: string;      // default "Book Now"
 };
 
 export type PersonItem = {
@@ -611,4 +988,17 @@ export type PersonsSection = SectionBase & {
   subtitle?: string;           // description
   items: PersonItem[];
   style?: PersonsStyle;
+};
+
+// Not user-addable — built at render time from settings.general.siteDisabled
+// (see getSiteDisabledSection in src/lib/siteConfigSections.ts).
+export type SiteDisabledSection = SectionBase & {
+  id: string;
+  type: 'siteDisabled';
+  title?: string;
+  message?: string;
+  logoImage?: string;
+  logoRounded?: boolean;
+  logoSize?: 'sm' | 'md' | 'lg';
+  socials?: SocialItem[];
 };

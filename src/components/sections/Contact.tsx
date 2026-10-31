@@ -7,6 +7,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faMapMarkerAlt, faPhone, faGlobe, faLink } from '@fortawesome/free-solid-svg-icons';
 import { faLinkedin, faInstagram, faFacebook, faYoutube, faTiktok } from '@fortawesome/free-brands-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { resolveAssetUrl } from '@/lib/assetUrl';
+import { useSite } from '@/context/SiteContext';
+import { findGlobalSocialLink, getGlobalSocialLinks } from '@/lib/socialLinks';
+import { SOCIAL_ICONS as PLATFORM_ICONS } from './Socials';
+import { findGlobalPhone, getGlobalPhones, phoneHref } from '@/lib/phoneNumbers';
 
 // ---- typed social keys + icon map ----
 type SocialType = 'linkedin' | 'instagram' | 'facebook' | 'youtube' | 'tiktok' | 'website' | 'linktree';
@@ -36,12 +41,29 @@ export function Contact({
   socials,
   backgroundUrl,
 }: ContactSection) {
+  const resolvedBackgroundUrl = resolveAssetUrl(backgroundUrl);
+
+  // Links picked from Settings → General → Social Media use the current Settings
+  // name/URL/icon; ones whose Settings link was cleared are hidden.
+  const { config } = useSite();
+  const globalLinks = getGlobalSocialLinks(config);
+  const resolvedSocials = (socials ?? []).flatMap((s) => {
+    if (!s.globalId) return [s];
+    const link = findGlobalSocialLink(s.globalId, globalLinks);
+    return link ? [{ ...s, label: link.name, href: link.href, customIcon: PLATFORM_ICONS[link.type] }] : [];
+  });
+
+  // A phone picked from Settings → General → Phone Numbers shows the current number; hidden if it was removed.
+  const settingsPhone = phone?.phoneId ? findGlobalPhone(phone.phoneId, getGlobalPhones(config)) : null;
+  const resolvedPhone = phone?.phoneId
+    ? settingsPhone && { label: settingsPhone.number, href: phoneHref(settingsPhone.number) }
+    : phone;
 
   return (
     <section
       id={id}
       className="relative bg-fixed bg-cover bg-center py-[10rem]"
-      style={{ backgroundImage: `url(${backgroundUrl})` }}
+      style={resolvedBackgroundUrl ? { backgroundImage: `url(${resolvedBackgroundUrl})` } : undefined}
     >
       {/* optional overlay for contrast */}
       <div className="absolute inset-0 bg-black/50" aria-hidden />
@@ -64,16 +86,16 @@ export function Contact({
                 <a href={`mailto:${email}`} className="underline">{email}</a>
               </li>
             )}
-            {phone && (
+            {resolvedPhone && (
               <li className="flex items-center gap-3">
                 <FontAwesomeIcon icon={faPhone} className="w-5 h-5" />
-                <a href={phone.href} target="_blank" rel="noopener noreferrer" className="underline">
-                  {phone.label}
+                <a href={resolvedPhone.href} target="_blank" rel="noopener noreferrer" className="underline">
+                  {resolvedPhone.label}
                 </a>
               </li>
             )}
 
-            {socials?.map((s, i) => {
+            {resolvedSocials.map((s, i) => {
               const key = toSocialType(s.label);
               const icon = s.customIcon ? s.customIcon : key ? SOCIAL_ICONS[key] : faLink;
               console.log('Rendering social link:', s.label, 'with icon:', icon);

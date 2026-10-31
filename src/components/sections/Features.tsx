@@ -5,34 +5,57 @@ import Image from 'next/image';
 import { resolveAssetUrl } from '@/lib/assetUrl';
 import {SeperatorWave} from '@/components/SeperatorWave';
 
-export function Features({ id, title, items, backgroundClass, topWaveType, bottomWaveType }: FeaturesSection) {
+export function Features({ id, title, items, backgroundClass, topWaveType, bottomWaveType, cardLink, contentPosition }: FeaturesSection) {
+  const columns = items.length === 2 || items.length === 4 ? '2':'3'
+  // Title/body above the image instead of below (cards are flex columns, so this only reorders)
+  const contentAbove = contentPosition === 'above';
   return (
   <div className='relative'>
     <SeperatorWave type={topWaveType} flip={false} color={'var(--bg)'} />
     <section id={id} className={`section ${backgroundClass}`}>
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[1860px] px-0 sm:px-1 md:px-6">
         {title ? <AnimatedSection><h2 className="text-4xl md:text-5xl font-extrabold text-center mb-12">{title}</h2></AnimatedSection> : null}
     
-        <div className="grid gap-8 md:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] place-content-center">
+        <div className={`grid gap-8 grid-cols-1 sm:grid-cols-${columns}`}>
           {items.map((f, i) => {
             const fimgUrl = resolveAssetUrl(f.imageUrl);
             const ink = i % 2 === 0; // alternate deep “ink” panels like your screenshots
+            // "Whole card is the link" mode: the card itself becomes the <a>, no Learn more button
+            const wholeCard = cardLink === true && !!f.link;
+            const CardTag = wholeCard ? 'a' : 'div';
             return (
               <AnimatedSection key={i} delay={i * 0.08}>
-                <div className={`p-7 ${ink ? 'card-ink' : 'card'}`}>
+                <CardTag
+                  href={wholeCard ? f.link : undefined}
+                  className={`overflow-hidden flex flex-col ${ink ? 'card-ink' : 'card'} !max-w-[700px] !mx-auto ${
+                    wholeCard ? 'card-interactive cursor-pointer' : ''
+                  }`}
+                >
                   {fimgUrl ? (
-                    <div className={` rounded-[var(--round-xl)] aspect-square overflow-hidden mb-4 mx-auto ${fimgUrl === 'sm' ? 'w-16 h-16' : fimgUrl === 'md' ? 'w-24 h-24' : fimgUrl === 'lg' ? 'w-[100%] h-auto' : 'w-full h-full' }`}>
-                      <Image src={fimgUrl} alt="" width={980} height={740} className="w-full h-auto feature-image" loading='eager' />
-                      </div>) : null}
-                  <div className={`text-2xl font-bold mb-2 ${ink ? 'text-[var(--text-2)]' : 'text-[var(--text-1)]'}`}>{f.title}</div>
-                  {f.body ? <p className={`${ink ? 'text-[var(--text-2)]/90' : 'text-[var(--text-1)]'}`}>{f.body}</p> : null}
-                  <div className="mt-6">
-                    {f.link?<a href={f.link} className={`inline-flex items-center gap-2 ${ink ? 'text-[var(--text-2)]' : 'text-fg'} underline cursor-pointer`}>
-                      Learn more
-                      <span aria-hidden>↗</span>
-                    </a>:null}
+                    <div className="relative w-full min-h-[300px] aspect-[5/3]">
+                      <Image
+                        src={fimgUrl}
+                        alt={f.title || ''}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 50vw"
+                        className="object-cover feature-image h-100 aspect-[5/3]"
+                        loading="eager"
+                      />
+                    </div>
+                  ) : null}
+                  <div className={`p-7 ${contentAbove ? 'order-first' : ''}`}>
+                    <div className={`text-2xl font-bold mb-2 ${ink ? 'text-[var(--text-2)]' : 'text-[var(--text-1)]'}`}>{f.title}</div>
+                    {f.body ? <p className={`${ink ? 'text-[var(--text-2)]/90' : 'text-[var(--text-1)]'}`}>{f.body}</p> : null}
+                    {f.link && !wholeCard ? (
+                      <div className="mt-6">
+                        <a href={f.link} className={ink ? 'btn-gradient-inverted' : 'btn-gradient'}>
+                          Learn more
+                          <span aria-hidden className="ml-2">↗</span>
+                        </a>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
+                </CardTag>
               </AnimatedSection>
             );
           })}

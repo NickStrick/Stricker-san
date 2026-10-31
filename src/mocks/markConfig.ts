@@ -1,4 +1,4 @@
-// src/mocks/markStrickerConfig.ts
+// src/mocks/markConfig.ts
 import type { SiteConfig } from "@/types/site";
 import { faNewspaper, faGlobe } from '@fortawesome/free-solid-svg-icons';
 

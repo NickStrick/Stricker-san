@@ -23,7 +23,14 @@ import type {
   SocialsSection,
   VideoSection,
   ProductListingsSection,
-  PersonsSection
+  PersonsSection,
+  ProductShopSection,
+  SendAMessageSection,
+  PageLinksSection,
+  BannerCarouselSection,
+  ClassDetailSection,
+  ClassListSection,
+  SiteDisabledSection,
 } from '@/types/site';
 
 const newId = (p: string) => `${p}-${Math.random().toString(36).slice(2, 7)}`;
@@ -40,7 +47,7 @@ export type SectionRegistry = Record<AnySection['type'], SectionRegistryItem<Any
 export const SECTION_REGISTRY: SectionRegistry = {
   header: {
     label: 'Header',
-    allowed: true,
+    allowed: false,
     create: (): HeaderSection => ({
       id: newId('header'),
       type: 'header',
@@ -138,7 +145,7 @@ export const SECTION_REGISTRY: SectionRegistry = {
 
   footer: {
     label: 'Footer',
-    allowed: true,
+    allowed: false,
     create: (): FooterSection => ({
       id: newId('footer'),
       type: 'footer',
@@ -216,6 +223,7 @@ export const SECTION_REGISTRY: SectionRegistry = {
       backgroundUrl: '',
       overlay: false,
       align: 'left',
+      subtitleAlign: 'center',
       height: 'md',
       motion: undefined,
     }),
@@ -349,31 +357,37 @@ export const SECTION_REGISTRY: SectionRegistry = {
       type: 'productListings',
       title: 'Our Products',
       subtitle: 'Browse our offerings.',
-      products: [
-        {
-          id: 'prod-1',
-          name: 'Sample Product',
-          subtitle: 'A great item',
-          price: 2999,
-          compareAtPrice: 3999,
-          currency: 'USD',
-          thumbnailUrl: 'configs/your-site/assets/sample-product.jpg',
-          summary: 'Short summary of the product.',
-          description: 'Longer description that appears in the modal.',
-          features: ['Quality materials', 'Great design', '2-year warranty'],
-          specs: [{ label: 'Color', value: 'Lavender' }, { label: 'Size', value: 'Standard' }],
-          badges: ['New'],
-          stock: 'in_stock',
-          purchaseUrl: 'https://example.com/checkout?product=prod-1',
-          ctaLabel: 'Buy Now',
-        },
-      ],
-      style: { columns: 3, cardVariant: 'default', showBadges: true },
+      productIds: [],
+      viewType: 'featured',
+      style: { columns: 4, cardVariant: 'default', showBadges: true },
       showAllThreshold: 3,
       buyCtaFallback: 'Buy Now',
     }),
     // No Editor yet — your ConfigModal will show "No editor implemented…" until we add one.
   } as SectionRegistryItem<ProductListingsSection>,
+
+  classDetail: {
+    label: 'Class Detail',
+    allowed: true,
+    create: (id = `classDetail-${crypto.randomUUID().slice(0,6)}`): ClassDetailSection => ({
+      id,
+      type: 'classDetail',
+      classItemId: undefined,
+      buyCtaFallback: 'Book Now',
+    }),
+  } as SectionRegistryItem<ClassDetailSection>,
+
+  classList: {
+    label: 'Class List',
+    allowed: true,
+    create: (id = `classList-${crypto.randomUUID().slice(0,6)}`): ClassListSection => ({
+      id,
+      type: 'classList',
+      title: 'Our Classes',
+      subtitle: '',
+      buyCtaFallback: 'Book Now',
+    }),
+  } as SectionRegistryItem<ClassListSection>,
 
   persons: {
     label: 'Persons',
@@ -386,6 +400,79 @@ export const SECTION_REGISTRY: SectionRegistry = {
       subtitle: 'Meet the people behind our success.',
       items: [],
       style: { columns: 3, cardVariant: 'default', rounded: 'xl', align: 'center' },
+    }),
+  },
+
+  productShop: {
+    label: 'Product Shop',
+    allowed: true,
+    create: (): ProductShopSection => ({
+      id: newId('productShop'),
+      type: 'productShop',
+      visible: true,
+      title: 'Shop',
+      subtitle: '',
+    }),
+  },
+
+  sendAMessage: {
+    label: 'Send a Message',
+    allowed: true,
+    create: (): SendAMessageSection => ({
+      id: newId('sendAMessage'),
+      type: 'sendAMessage',
+      visible: true,
+      title: 'Send Us a Message',
+      subtitle: '',
+      description: '',
+      submitLabel: 'Send Message',
+      successTitle: "We'll be in touch!",
+      successMessage: "Your message has been received. We'll get back to you shortly.",
+      fields: [
+        { id: 'name', label: 'Name', type: 'text', placeholder: 'Your name', required: true },
+        { id: 'email', label: 'Email', type: 'email', placeholder: 'your@email.com', required: true },
+        { id: 'message', label: 'Message', type: 'textarea', placeholder: 'How can we help?', required: true },
+      ],
+    }),
+  },
+
+  pageLinks: {
+    label: 'Page Links',
+    allowed: true,
+    create: (): PageLinksSection => ({
+      id: newId('pageLinks'),
+      type: 'pageLinks',
+      visible: true,
+      title: 'Explore',
+      subtitle: '',
+      items: [],
+      style: { align: 'center' },
+    }),
+  },
+
+  bannerCarousel: {
+    label: 'Banner Carousel (Ads/Links)',
+    allowed: true,
+    create: (): BannerCarouselSection => ({
+      id: newId('bannerCarousel'),
+      type: 'bannerCarousel',
+      visible: true,
+      items: [
+        { title: '', body: '', backgroundUrl: '', overlay: true, imageUrl: '', href: '' },
+      ],
+      intervalMs: 5000,
+    }),
+  },
+
+  // Toggled from Settings → General, never added to the section list.
+  siteDisabled: {
+    label: 'Site Unavailable',
+    allowed: false,
+    create: (): SiteDisabledSection => ({
+      id: 'site-disabled',
+      type: 'siteDisabled',
+      title: '',
+      message: '',
     }),
   },
 };

@@ -2,6 +2,7 @@
 
 import { useSite } from '@/context/SiteContext';
 import { SectionRenderer } from '@/components/SectionRenderer';
+import { getRenderableSections } from '@/lib/siteConfigSections';
 
 export default function ClientPage() {
   const { config, isLoading } = useSite();
@@ -21,10 +22,13 @@ export default function ClientPage() {
 //     );
 //   }
 
+  // SiteContext moves header/footer out of `sections`; this adds them back around the body.
+  const sections = getRenderableSections(config);
+
   return (
     <main className="bg-main">
-      {config.sections?.length ? (
-        config.sections.map((s) => <SectionRenderer key={s.id ?? Math.random()} section={s} />)
+      {sections.length ? (
+        sections.map((s) => <SectionRenderer key={s.id ?? Math.random()} section={s} />)
       ) : (
         <div className="section">No sections configured.</div>
       )}

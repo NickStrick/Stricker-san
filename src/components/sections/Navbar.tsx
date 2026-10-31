@@ -1,19 +1,41 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ShoppingCart, ChevronDown } from 'lucide-react';
 import { useSite } from '@/context/SiteContext';
+import { useCart } from '@/context/CartContext';
 import type { HeaderSection } from '@/types/site';
 import Image from 'next/image';
+import { handleHashClick } from '@/lib/scrollToHash';
+import { resolveAssetUrl } from '@/lib/assetUrl';
+
+function normalizeNavHref(href: string) {
+  if(!href || href === '' ||href === '/') {
+    return { linkHref: '/', hashHref: '#top' };
+  }
+  if (href.startsWith('#')) {
+    return { linkHref: `/${href}`, hashHref: href };
+  }
+  if (href.startsWith('/#')) {
+    return { linkHref: href, hashHref: href.slice(1) };
+  }
+  return { linkHref: href, hashHref: href };
+}
 
 export default function Navbar() {
   const { config } = useSite();
+  const { items: cartItems, openCart } = useCart();
+  const cartActive = config?.settings?.payments?.cartActive === true;
+  const cartQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [activeHref, setActiveHref] = useState<string>('');
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
   const header = useMemo<HeaderSection>(() => {
-    const fromConfig = config?.sections.find(s => s.type === 'header') as HeaderSection | undefined;
+    const fromConfig = config?.header as HeaderSection | undefined;
     // defaults if nothing provided
     return (
       fromConfig ?? {
@@ -30,25 +52,68 @@ export default function Navbar() {
       }
     );
   }, [config]);
-  useEffect(() => {
-    if (!activeHref && (header.links?.length ?? 0) > 0) {
-      setActiveHref(header.links![0].href);
-    }
-  }, [activeHref, header.links]);
 
+  const { sticky = true, blur = true, elevation = 'sm', transparent = false } = header.style ?? {};
+
+  // Dropdown groups only expose their children as navigable hrefs — flatten
+  // them out for pathname/scroll-spy matching, which only cares about hrefs.
+  const flatLinks = useMemo(
+    () => (header.links ?? []).flatMap((l) => (l.children?.length ? l.children : [l])),
+    [header.links]
+  );
+
+  // Close any open dropdown on route change.
   useEffect(() => {
-    const links = (header.links ?? []);
+    setOpenDropdown(null);
+  }, [pathname]);
+
+  // Close an open dropdown when clicking anywhere outside it.
+  useEffect(() => {
+    if (openDropdown === null) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-nav-dropdown]')) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [openDropdown]);
+
+  // Set active link based on current pathname (for full-page routes like /shop, /contact).
+  // Falls back to the first link when on the home page.
+  useEffect(() => {
+    const links = flatLinks;
+    if (links.length === 0) return;
+
+    const pageMatch = links.find((l) => {
+      const { linkHref } = normalizeNavHref(l.href);
+      return !linkHref.startsWith('/#') && linkHref === pathname;
+    });
+
+    if (pageMatch) {
+      setActiveHref(pageMatch.href);
+    } else if (pathname === '/' || !activeHref) {
+      // On the home page, default to the first link; scroll will take over from here.
+      setActiveHref(links[0].href);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, flatLinks]);
+
+  // Scroll-based active tracking — only relevant on the home page where hash links live.
+  useEffect(() => {
+    if (pathname !== '/') return;
+
+    const links = flatLinks;
     if (links.length === 0) return;
     const homeHref =
-      header.links?.find(l => l.href === '/' || l.href === '#home' || l.href === '#top')?.href ??
+      links.find(l => l.href === '/' || l.href === '#home' || l.href === '#top')?.href ??
       links[0].href;
 
-    const sections = links
-      .map(l => {
-        if(!l.href.includes('#')) l.href = '#top'
-        return({ href: l.href, el: document.querySelector(l.href) as HTMLElement | null })
-      })
-      // .filter(s => s.el);
+    const sections = links.map((l) => {
+      const { hashHref } = normalizeNavHref(l.href);
+      const href = hashHref?.includes('#') ? hashHref : '#top';
+      return { href, el: document.querySelector(href) as HTMLElement | null };
+    });
 
     if (sections.length === 0) return;
 
@@ -94,9 +159,15 @@ export default function Navbar() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, [activeHref, header.links]);
+  }, [activeHref, flatLinks, pathname, sticky]);
 
-  const { sticky = true, blur = true, elevation = 'sm', transparent = false } = header.style ?? {};
+  // Scale link spacing/size down as more nav items are added, so the center
+  // group keeps fitting between the logo and the right-side buttons instead
+  // of overflowing behind them.
+  const linkCount = (header.links ?? []).length;
+  const navGapCls =
+    linkCount >= 7 ? 'gap-3' : linkCount >= 6 ? 'gap-4' : linkCount >= 5 ? 'gap-5' : 'gap-6';
+  const navTextCls = linkCount >= 6 ? 'text-sm' : 'text-base';
 
   // computed classes
   const positionCls = sticky ? 'fixed top-0 inset-x-0' : 'relative'; // 👈 sticky toggle
@@ -111,6 +182,25 @@ export default function Navbar() {
 
   // Close menu on nav click (mobile)
   const onNav = () => setOpen(false);
+  const handleAnchorClick = (href: string, closeMenu: boolean, onDone?: () => void) => {
+    const { hashHref } = normalizeNavHref(href);
+    const isSectionLink = hashHref.startsWith('#');
+
+    if (!isSectionLink || pathname !== '/') {
+      return () => {
+        if (closeMenu) onNav();
+        onDone?.();
+      };
+    }
+
+    return handleHashClick(hashHref, {
+      setActiveHref,
+      onAfterScroll: () => {
+        if (closeMenu) onNav();
+        onDone?.();
+      },
+    });
+  };
 
   return (
     <>
@@ -123,53 +213,121 @@ export default function Navbar() {
           shadowCls,
         ].join(' ')}
       >
-        <nav className="mx-auto max-w-6xl h-[4rem] px-4 md:px-6 flex items-center">
+        <nav className="mx-auto max-w-6xl h-[4rem] px-4 md:pr-6 grid grid-cols-[auto_1fr_auto] items-center pl-[80px] nav:pl-4 ">
           {/* Left: Logo */}
-          <div className="min-w-0 flex-1 relative">
-            <Link href="/" className="absolute left-[-70px] top-[-15px] rounded-full overflow-hidden w-[60px] h-[60px]">
-            {header.logoImage&&header.logoImage.length?
-              <Image src={header.logoImage} alt="logo" width={140} height={60}  />
+          <div className="min-w-0 relative">
+            <Link href="/" className="absolute left-[-65px] top-[-15px] rounded-full overflow-hidden w-[60px] h-[60px]">
+            {resolveAssetUrl(header.logoImage) ?
+              <Image src={resolveAssetUrl(header.logoImage)!} alt={header.logoText ? `${header.logoText} logo` : 'logo'} width={140} height={60} className="w-full h-full object-cover" />
               :<></>}</Link>
-            <Link href="/" className="text-lg font-semibold hover:opacity-90 text-[var(--text-1)] gradient-text ">
-              
+            <Link href="/" className="opacity-0 xs:opacity-100 text-sm font-semibold hover:opacity-90 text-[var(--text-1)] gradient-text sm:text-lg text-nowrap">
+
               {header.logoText ?? 'Site-Crafter'}
             </Link>
           </div>
 
           {/* Center: Links (desktop) */}
-          <ul className="hidden md:flex flex-1 justify-center gap-6 text-muted">
-            {(header.links ?? []).map(l => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className="relative inline-flex flex-col items-center gap-2 hover:text-fg transition-colors text-nowrap"
-                  onClick={() => setActiveHref(l.href)}
-                >
-                  <span>{l.label}</span>
-                  <div
-                    className={[
-                      'h-[4px] w-full rounded-full',
-                      'bg-gradient-to-r from-amber-400 via-[var(--primary)] to-[var(--accent)]',
-                      'transition-transform duration-300 ease-out origin-left',
-                      activeHref === l.href ? 'scale-x-100' : 'scale-x-0',
-                    ].join(' ')}
-                  />
-                </Link>
-              </li>
-            ))}
+          {/* No overflow-x here: setting overflow-x forces overflow-y to
+              resolve away from `visible` too, which would clip the dropdown
+              flyout panels below. The dynamic gap/size + grouping keep this
+              row from overflowing instead. */}
+          <ul className={`hidden nav:flex min-w-0 justify-center text-muted ${navGapCls} ${navTextCls}`}>
+            {(header.links ?? []).map((l, i) => {
+              const isGroup = !!l.children?.length;
+              const isOpen = openDropdown === i;
+              const groupHasActiveChild = isGroup && l.children!.some((c) => c.href === activeHref);
+
+              if (isGroup) {
+                return (
+                  <li key={`${l.label ?? ''}-${i}`} className="relative" data-nav-dropdown>
+                    <button
+                      type="button"
+                      className="relative inline-flex flex-col items-center gap-2 hover:text-fg transition-colors text-nowrap"
+                      aria-expanded={isOpen}
+                      onClick={() => setOpenDropdown(isOpen ? null : i)}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {l.label}
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                      </span>
+                      <div
+                        className={[
+                          'h-[4px] w-full rounded-full',
+                          'bg-gradient-to-r from-amber-400 via-[var(--primary)] to-[var(--accent)]',
+                          'transition-transform duration-300 ease-out origin-left',
+                          groupHasActiveChild ? 'scale-x-100' : 'scale-x-0',
+                        ].join(' ')}
+                      />
+                    </button>
+
+                    {isOpen && (
+                      <ul className="absolute top-full left-1/2 -translate-x-1/2 mt-2 min-w-[180px] rounded-lg border border-[color-mix(in_srgb,var(--fg)_10%,transparent)] bg-[var(--bg)] shadow-lg py-2 z-50">
+                        {l.children!.map((c, ci) => (
+                          <li key={`${c.href ?? ''}-${ci}`}>
+                            <Link
+                              href={normalizeNavHref(c.href).linkHref}
+                              className="block px-4 py-2 text-nowrap hover:text-fg hover:bg-[color-mix(in_srgb,var(--fg)_6%,transparent)]"
+                              onClick={handleAnchorClick(c.href, false, () => setOpenDropdown(null))}
+                            >
+                              {c.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
+
+              return (
+                <li key={`${l.href ?? ''}-${l.label ?? ''}-${i}`}>
+                  <Link
+                    href={normalizeNavHref(l.href).linkHref}
+                    className="relative inline-flex flex-col items-center gap-2 hover:text-fg transition-colors text-nowrap"
+                    onClick={handleAnchorClick(l.href, false)}
+                  >
+                    <span>{l.label}</span>
+                    <div
+                      className={[
+                        'h-[4px] w-full rounded-full',
+                        'bg-gradient-to-r from-amber-400 via-[var(--primary)] to-[var(--accent)]',
+                        'transition-transform duration-300 ease-out origin-left',
+                        activeHref === l.href ? 'scale-x-100' : 'scale-x-0',
+                      ].join(' ')}
+                    />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
           {/* Right: CTA (optional) & Mobile toggle */}
-          <div className="min-w-0 flex-1 flex justify-end items-center gap-3">
+          <div className="min-w-0 flex justify-end items-center gap-3">
             {header.cta ? (
-              <Link href={header.cta.href} className="btn-small text-nowrap btn-gradient hidden md:inline-flex">
+              <Link href={header.cta.href} className="head-cta-btn btn-small text-nowrap btn-gradient hidden nav:inline-flex">
                 {header.cta.label}
               </Link>
             ) : null}
 
+            {cartActive && (
+              <button
+                onClick={openCart}
+                aria-label="Open cart"
+                className="relative !flex flex-row items-center !p-2 !pr-6 !pl-[25px] btn-gradient text-white rounded-full cart-icon w-[120px]"
+              >
+                <ShoppingCart size={24} className="inline-block" />
+                <span className="ml-1 text-[14px] cart-text">Cart</span>
+                {cartQuantity > 0 && (
+                  <span className="absolute top-2 left-[.45rem] text-[var(--primary)] rounded-full w-5 h-5 text-xs flex items-center justify-center cart-items-count">
+                    {cartQuantity}
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* Mobile menu button */}
             <button
-              className="md:hidden inline-flex items-center justify-center min-w-9 w-9 h-9 rounded-md
+              className="nav:hidden inline-flex items-center justify-center min-w-9 w-9 h-9 rounded-md
                          border border-[color-mix(in_srgb,var(--fg)_12%,transparent)] text-[var(--text-1)]"
               aria-expanded={open}
               aria-controls="mobile-nav"
@@ -184,36 +342,69 @@ export default function Navbar() {
         <div
           id="mobile-nav"
           className={`
-            md:hidden overflow-hidden transition-[max-height] text-[var(--text-1)]
+            nav:hidden overflow-hidden transition-[max-height] text-[var(--text-1)]
             border-t border-[color-mix(in_srgb,var(--fg)_10%,transparent)]
-            ${open ? 'max-h-96' : 'max-h-0'}
+            ${open ? 'max-h-[80vh] overflow-y-auto' : 'max-h-0'}
           `}
         >
-          <ul className="px-4 py-3 flex flex-col gap-2 bg-[color-mix(in_srgb,var(--bg)_92%,transparent)]">
-            {(header.links ?? []).map(l => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className="block py-2 text-fg/80 hover:text-fg text-nowrap"
-                  onClick={() => {
-                    setActiveHref(l.href);
-                    onNav();
-                  }}
-                >
-                  <span className="inline-flex flex-col items-start gap-2">
-                    {l.label}
-                    <div
-                      className={[
-                        'h-[2px] w-full rounded-full',
-                        'bg-gradient-to-r from-amber-400 via-[var(--primary)] to-[var(--accent)]',
-                        'transition-transform duration-300 ease-out origin-left',
-                        activeHref === l.href ? 'scale-x-100' : 'scale-x-0',
-                      ].join(' ')}
-                    />
-                  </span>
-                </Link>
-              </li>
-            ))}
+          <ul className="flex flex-col bg-[color-mix(in_srgb,var(--bg)_92%,transparent)]">
+            {(header.links ?? []).map((l, i) => {
+              const isGroup = !!l.children?.length;
+              const isMobileGroupOpen = openDropdown === i;
+
+              if (isGroup) {
+                return (
+                  <li key={`${l.label ?? ''}-${i}`} className="border-b border-[color-mix(in_srgb,var(--fg)_8%,transparent)]">
+                    <button
+                      type="button"
+                      className="relative w-full py-3 px-10 text-center text-base text-fg/80 hover:text-fg text-nowrap"
+                      aria-expanded={isMobileGroupOpen}
+                      onClick={() => setOpenDropdown(isMobileGroupOpen ? null : i)}
+                    >
+                      {l.label}
+                      <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-transform ${isMobileGroupOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isMobileGroupOpen && (
+                      <ul className="pb-1">
+                        {l.children!.map((c, ci) => (
+                          <li key={`${c.href ?? ''}-${ci}`} className="border-t border-[color-mix(in_srgb,var(--fg)_6%,transparent)]">
+                            <Link
+                              href={normalizeNavHref(c.href).linkHref}
+                              className="block py-2.5 text-center text-fg/70 hover:text-fg text-nowrap"
+                              onClick={handleAnchorClick(c.href, true, () => setOpenDropdown(null))}
+                            >
+                              {c.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
+
+              return (
+                <li key={`${l.href ?? ''}-${l.label ?? ''}-${i}`} className="border-b border-[color-mix(in_srgb,var(--fg)_8%,transparent)]">
+                  <Link
+                    href={normalizeNavHref(l.href).linkHref}
+                    className="block py-3 text-center text-base text-fg/80 hover:text-fg text-nowrap"
+                    onClick={handleAnchorClick(l.href, true)}
+                  >
+                    <span className="inline-flex flex-col items-center gap-1">
+                      {l.label}
+                      <div
+                        className={[
+                          'h-[2px] w-full rounded-full',
+                          'bg-gradient-to-r from-amber-400 via-[var(--primary)] to-[var(--accent)]',
+                          'transition-transform duration-300 ease-out origin-left',
+                          activeHref === l.href ? 'scale-x-100' : 'scale-x-0',
+                        ].join(' ')}
+                      />
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
             {/* {header.cta ? (
               <li className="pt-2">
                 <Link href={header.cta.href} className="btn-gradient w-full" onClick={onNav}>

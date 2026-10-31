@@ -7,7 +7,7 @@ import Image from "next/image";
 import { resolveAssetUrl } from '@/lib/assetUrl';
 import {SeperatorWave} from '@/components/SeperatorWave';
 
-export function About({ id, title = 'About', body, imageUrl, bullets, align = 'left', backgroundClass = 'bg-[var(--bg)', topWaveType, bottomWaveType }: AboutSection) {
+export function About({ id, title = 'About', subtitle, body, imageUrl, bullets, align = 'left', backgroundClass = 'bg-[var(--bg)', topWaveType, bottomWaveType }: AboutSection) {
   const imageFirst = align === 'left';
   const imgUrl = resolveAssetUrl(imageUrl);
   const hasWaves = backgroundClass.includes('bg-solid-primary');
@@ -15,7 +15,7 @@ export function About({ id, title = 'About', body, imageUrl, bullets, align = 'l
     <SeperatorWave type={topWaveType} flip={false} color={'var(--bg)'} />
     <section id={id} className={`relative  !py-6 !pt-12 ${backgroundClass} !pb-8`}>
       
-      <div className={`section container mx-auto px-4 grid gap-10 ${imgUrl?'md:grid-cols-2':'md:grid-cols-1'} items-center ${hasWaves?'!text-[var(--text-2)]':''}`}>
+      <div className={`section container !max-w-[1700px] mx-auto px-4 grid gap-10 ${imgUrl?'mlg:grid-cols-2':'mlg:grid-cols-1'} items-center ${hasWaves?'!text-[var(--text-2)]':''}`}>
         {imgUrl && imageFirst && (
           <motion.div
               initial={{ opacity: 0, scale: .94, y: 16 }}
@@ -24,13 +24,14 @@ export function About({ id, title = 'About', body, imageUrl, bullets, align = 'l
               className="relative w-fit mx-auto"
             >
             {/* <div className="absolute -inset-6 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] blur-2xl z-0" /> */}
-            <div className="overflow-hidden rounded-full max-h-[600px] max-w-[600px] z-2 relative aspect-square">
-              <Image width={600} height={600} src={imgUrl} alt={title} className="w-full rounded-xl object-cover" />
+            <div className="overflow-hidden rounded-full max-h-[800px] max-w-[800px] z-2 relative aspect-square">
+              <Image width={800} height={800} src={imgUrl} alt={title} className="w-full rounded-xl object-cover" />
             </div>
           </motion.div>
         )}
-        <AnimatedSection className="mx-auto max-w-6xl">
-          {title && <h2 className="text-3xl font-semibold mb-4 text-center ">{title}</h2>}
+        <AnimatedSection className="mx-auto max-w-6xl p-4">
+          {title && <h2 className="mb-8 text-3xl md:text-4xl font-extrabold text-center ">{title}</h2>}
+          {subtitle ? <p className="h-hero-p text-muted text-lg max-w-xl mb-8 text-center font-bold mx-auto">{subtitle}</p> : null}
           <p className="text-lg leading-relaxed indent-[50px]">{body}</p>
           {bullets && bullets.length > 0 && (
             <ul className="mt-6 space-y-2 list-disc pl-5">
@@ -48,8 +49,8 @@ export function About({ id, title = 'About', body, imageUrl, bullets, align = 'l
             >
               {/* soft blob shadow */}
               {/* <div className="absolute -inset-6 rounded-full bg-[color-mix(in_srgb,var(--primary)_18%,transparent)] blur-2xl -z-10" /> */}
-              <div className="overflow-hidden rounded-full max-h-[600px] max-w-[600px] mx-auto">
-                <Image src={imgUrl} alt="" width={980} height={740} className="w-full h-auto" />
+              <div className="overflow-hidden rounded-sm max-h-[800px] max-w-[800px] mx-auto">
+                <Image src={imgUrl} alt="" width={1080} height={840} className="w-full h-auto" />
               </div>
             </motion.div>
         )}
